@@ -1,0 +1,43 @@
+group: React
+icon: "⚛️"
+commands:
+  - name: "Create React app (Vite)"
+    cmd: "npm create vite@latest {{app_name}} -- --template react"
+    description: "Scaffold a new React app using Vite"
+    tags: [react, setup]
+  - name: "Create React app (CRA)"
+    cmd: "npx create-react-app {{app_name}}"
+    description: "Scaffold using Create React App (legacy)"
+    tags: [react, setup]
+  - name: "Create Next.js app"
+    cmd: "npx create-next-app@latest {{app_name}}"
+    description: "Scaffold a new Next.js application"
+    tags: [react, nextjs, setup]
+  - name: "Start dev server"
+    cmd: "npm run dev"
+    description: "Start Vite/Next.js development server with HMR"
+    tags: [react, run]
+  - name: "Build for production"
+    cmd: "npm run build"
+    description: "Create optimized production build"
+    tags: [react, build, deploy]
+  - name: "Preview production build"
+    cmd: "npm run preview"
+    description: "Serve the production build locally for testing"
+    tags: [react, build]
+  - name: "Run tests (Jest)"
+    cmd: "npm test -- --watchAll=false"
+    description: "Run all tests once (non-watch mode)"
+    tags: [react, testing]
+  - name: "Install React Router"
+    cmd: "npm install react-router-dom"
+    description: "Add client-side routing to the app"
+    tags: [react, packages]
+  - name: "Install Axios"
+    cmd: "npm install axios"
+    description: "Add HTTP client for API requests"
+    tags: [react, packages]
+  - name: "Install Tailwind CSS"
+    cmd: "npm install -D tailwindcss postcss autoprefixer && npx tailwindcss init -p"
+    description: "Set up Tailwind CSS in a React project"
+    tags: [react, packages, styling]

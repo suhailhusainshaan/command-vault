@@ -1,0 +1,35 @@
+group: Python
+icon: "🐍"
+commands:
+  - name: "Create virtual environment"
+    cmd: "python3 -m venv venv"
+    description: "Create a new venv in current directory"
+    tags: [python, setup]
+  - name: "Activate venv (macOS/Linux)"
+    cmd: "source venv/bin/activate"
+    description: "Activate the virtual environment"
+    tags: [python, setup]
+  - name: "Install from requirements"
+    cmd: "pip install -r requirements.txt"
+    description: "Install all project dependencies"
+    tags: [python, packages]
+  - name: "Freeze requirements"
+    cmd: "pip freeze > requirements.txt"
+    description: "Save current packages to requirements.txt"
+    tags: [python, packages]
+  - name: "Run script"
+    cmd: "python3 {{script_name}}.py"
+    description: "Run a Python script"
+    tags: [python, run]
+  - name: "Run tests (pytest)"
+    cmd: "pytest -v"
+    description: "Run all tests with verbose output"
+    tags: [python, testing]
+  - name: "Run tests with coverage"
+    cmd: "pytest --cov={{app_folder}} --cov-report=html"
+    description: "Run tests and generate HTML coverage report"
+    tags: [python, testing]
+  - name: "Check outdated packages"
+    cmd: "pip list --outdated"
+    description: "List all packages with available updates"
+    tags: [python, packages]

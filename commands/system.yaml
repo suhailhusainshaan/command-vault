@@ -1,0 +1,36 @@
+group: System
+icon: "⚙️"
+commands:
+  - name: "Show disk usage"
+    cmd: "df -h"
+    description: "Show mounted filesystem usage"
+    tags: [system, disk]
+  - name: "Show directory size"
+    cmd: "du -sh {{path}}"
+    description: "Show total size for a file or directory"
+    tags: [system, disk]
+  - name: "Find process on port"
+    cmd: "lsof -i :{{port}}"
+    description: "Show the process listening on a port"
+    tags: [system, network, process]
+  - name: "Kill process on port"
+    cmd: "kill -9 $(lsof -ti :{{port}})"
+    description: "Force-kill the process listening on a port"
+    tags: [system, network, process]
+    dangerous: true
+  - name: "List processes"
+    cmd: "ps aux"
+    description: "List running processes"
+    tags: [system, process]
+  - name: "Top process monitor"
+    cmd: "top"
+    description: "Open the live process monitor"
+    tags: [system, process]
+  - name: "Show current shell"
+    cmd: "echo $SHELL"
+    description: "Print the active shell path"
+    tags: [system, shell]
+  - name: "Show PATH entries"
+    cmd: "echo $PATH | tr ':' '\\n'"
+    description: "Print PATH entries one per line"
+    tags: [system, shell]

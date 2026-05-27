@@ -1,0 +1,175 @@
+group: PHP & Laravel
+icon: "🐘"
+commands:
+  - name: "Serve application"
+    cmd: "php artisan serve"
+    description: "Start Laravel development server on :8000"
+    tags: [laravel, server]
+  - name: "Serve on custom port"
+    cmd: "php artisan serve --port={{port}}"
+    description: "Start server on a specific port"
+    tags: [laravel, server]
+  - name: "Make controller"
+    cmd: "php artisan make:controller {{ControllerName}}"
+    description: "Create a new controller class"
+    tags: [laravel, make]
+  - name: "Make resource controller"
+    cmd: "php artisan make:controller {{ControllerName}} --resource"
+    description: "Create controller with full CRUD methods"
+    tags: [laravel, make]
+  - name: "Make model + migration"
+    cmd: "php artisan make:model {{ModelName}} -m"
+    description: "Create a model and its migration file"
+    tags: [laravel, make, database]
+  - name: "Make model + migration + controller"
+    cmd: "php artisan make:model {{ModelName}} -mcr"
+    description: "Create model, migration, and resource controller"
+    tags: [laravel, make]
+  - name: "Make migration"
+    cmd: "php artisan make:migration {{migration_name}}"
+    description: "Create a new migration file"
+    tags: [laravel, make, database]
+  - name: "Make seeder"
+    cmd: "php artisan make:seeder {{SeederName}}"
+    description: "Create a new database seeder"
+    tags: [laravel, make, database]
+  - name: "Make factory"
+    cmd: "php artisan make:factory {{FactoryName}} --model={{ModelName}}"
+    description: "Create a model factory"
+    tags: [laravel, make, database]
+  - name: "Make request"
+    cmd: "php artisan make:request {{RequestName}}"
+    description: "Create a form request validation class"
+    tags: [laravel, make]
+  - name: "Make middleware"
+    cmd: "php artisan make:middleware {{MiddlewareName}}"
+    description: "Create a new middleware class"
+    tags: [laravel, make]
+  - name: "Make job"
+    cmd: "php artisan make:job {{JobName}}"
+    description: "Create a new queued job class"
+    tags: [laravel, make, queue]
+  - name: "Make event"
+    cmd: "php artisan make:event {{EventName}}"
+    description: "Create a new event class"
+    tags: [laravel, make]
+  - name: "Make listener"
+    cmd: "php artisan make:listener {{ListenerName}} --event={{EventName}}"
+    description: "Create an event listener"
+    tags: [laravel, make]
+  - name: "Make command"
+    cmd: "php artisan make:command {{CommandName}}"
+    description: "Create a new Artisan command"
+    tags: [laravel, make]
+  - name: "Run migrations"
+    cmd: "php artisan migrate"
+    description: "Run all pending database migrations"
+    tags: [laravel, database, migrate]
+  - name: "Fresh migrate + seed"
+    cmd: "php artisan migrate:fresh --seed"
+    description: "Drop all tables, re-run migrations, and seed"
+    tags: [laravel, database, migrate]
+    dangerous: true
+  - name: "Rollback last migration"
+    cmd: "php artisan migrate:rollback"
+    description: "Rollback the last batch of migrations"
+    tags: [laravel, database, migrate]
+    dangerous: true
+  - name: "Migration status"
+    cmd: "php artisan migrate:status"
+    description: "Show status of each migration"
+    tags: [laravel, database]
+  - name: "Run seeders"
+    cmd: "php artisan db:seed"
+    description: "Run all database seeders"
+    tags: [laravel, database]
+  - name: "Run specific seeder"
+    cmd: "php artisan db:seed --class={{SeederName}}"
+    description: "Run a specific seeder class"
+    tags: [laravel, database]
+  - name: "Clear all caches"
+    cmd: "php artisan optimize:clear"
+    description: "Clear config, route, view, and app cache"
+    tags: [laravel, cache]
+  - name: "Cache config"
+    cmd: "php artisan config:cache"
+    description: "Cache configuration for faster loading"
+    tags: [laravel, cache, deploy]
+  - name: "Cache routes"
+    cmd: "php artisan route:cache"
+    description: "Cache routes for better performance"
+    tags: [laravel, cache, deploy]
+  - name: "Optimize for production"
+    cmd: "php artisan optimize"
+    description: "Cache config, routes, and views for production"
+    tags: [laravel, cache, deploy]
+  - name: "Clear application cache"
+    cmd: "php artisan cache:clear"
+    description: "Flush the application cache"
+    tags: [laravel, cache]
+  - name: "Clear config cache"
+    cmd: "php artisan config:clear"
+    description: "Remove the configuration cache"
+    tags: [laravel, cache]
+  - name: "List all routes"
+    cmd: "php artisan route:list"
+    description: "Display all registered application routes"
+    tags: [laravel, routes]
+  - name: "List routes (filtered)"
+    cmd: "php artisan route:list --name={{filter}}"
+    description: "Filter routes by name pattern"
+    tags: [laravel, routes]
+  - name: "Start queue worker"
+    cmd: "php artisan queue:work"
+    description: "Start processing queued jobs"
+    tags: [laravel, queue]
+  - name: "Queue worker (with options)"
+    cmd: "php artisan queue:work --tries={{tries}} --timeout={{timeout}}"
+    description: "Start worker with retry and timeout limits"
+    tags: [laravel, queue]
+  - name: "Restart queue workers"
+    cmd: "php artisan queue:restart"
+    description: "Signal all workers to restart after current job"
+    tags: [laravel, queue]
+  - name: "List failed jobs"
+    cmd: "php artisan queue:failed"
+    description: "List all failed queue jobs"
+    tags: [laravel, queue]
+  - name: "Retry failed job"
+    cmd: "php artisan queue:retry {{job_id}}"
+    description: "Retry a specific failed job by ID"
+    tags: [laravel, queue]
+  - name: "Flush all failed jobs"
+    cmd: "php artisan queue:flush"
+    description: "Delete all failed job records"
+    tags: [laravel, queue]
+    dangerous: true
+  - name: "Open Tinker REPL"
+    cmd: "php artisan tinker"
+    description: "Interactive REPL to experiment with your Laravel app"
+    tags: [laravel, debug]
+  - name: "Enable maintenance mode"
+    cmd: "php artisan down"
+    description: "Put the application in maintenance mode"
+    tags: [laravel, maintenance]
+    dangerous: true
+  - name: "Disable maintenance mode"
+    cmd: "php artisan up"
+    description: "Bring the application out of maintenance mode"
+    tags: [laravel, maintenance]
+  - name: "Install dependencies"
+    cmd: "composer install"
+    description: "Install all PHP packages from composer.lock"
+    tags: [laravel, composer]
+  - name: "Update dependencies"
+    cmd: "composer update"
+    description: "Update all PHP packages to latest versions"
+    tags: [laravel, composer]
+  - name: "Require a package"
+    cmd: "composer require {{vendor/package}}"
+    description: "Add a new Composer package"
+    tags: [laravel, composer]
+  - name: "Dump autoload"
+    cmd: "composer dump-autoload"
+    description: "Regenerate the Composer autoload files"
+    tags: [laravel, composer]

@@ -1,0 +1,45 @@
+group: Docker
+icon: "🐳"
+commands:
+  - name: "Compose up (rebuild)"
+    cmd: "docker compose up --build"
+    tags: [docker]
+  - name: "Compose up (detached)"
+    cmd: "docker compose up -d"
+    tags: [docker]
+  - name: "Compose down"
+    cmd: "docker compose down"
+    tags: [docker]
+  - name: "Compose down (remove volumes)"
+    cmd: "docker compose down -v"
+    description: "Stop and remove containers AND volumes"
+    tags: [docker]
+    dangerous: true
+  - name: "List running containers"
+    cmd: "docker ps"
+    tags: [docker, inspect]
+  - name: "Exec into container"
+    cmd: "docker exec -it {{container_name}} bash"
+    description: "Open a bash shell inside a running container"
+    tags: [docker, exec]
+  - name: "View container logs"
+    cmd: "docker logs -f {{container_name}}"
+    tags: [docker, logs]
+  - name: "Remove all stopped containers"
+    cmd: "docker container prune -f"
+    tags: [docker, cleanup]
+    dangerous: true
+  - name: "Remove dangling images"
+    cmd: "docker image prune -f"
+    tags: [docker, cleanup]
+  - name: "Nuke everything"
+    cmd: "docker system prune -af"
+    description: "Remove ALL unused containers, images, volumes, networks"
+    tags: [docker, cleanup]
+    dangerous: true
+  - name: "Build image"
+    cmd: "docker build -t {{image_name}}:{{tag}} ."
+    tags: [docker, build]
+  - name: "Watch container stats"
+    cmd: "docker stats"
+    tags: [docker, inspect]

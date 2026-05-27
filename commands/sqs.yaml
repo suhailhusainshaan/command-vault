@@ -1,0 +1,57 @@
+group: Amazon SQS
+icon: "📬"
+commands:
+  - name: "List all queues"
+    cmd: "aws sqs list-queues"
+    description: "List all SQS queues in your AWS account"
+    tags: [sqs, aws, list]
+  - name: "List queues by prefix"
+    cmd: "aws sqs list-queues --queue-name-prefix {{prefix}}"
+    description: "Filter queues by name prefix"
+    tags: [sqs, aws, list]
+  - name: "Get queue URL"
+    cmd: "aws sqs get-queue-url --queue-name {{queue_name}}"
+    description: "Retrieve the URL of an SQS queue"
+    tags: [sqs, aws]
+  - name: "Create standard queue"
+    cmd: "aws sqs create-queue --queue-name {{queue_name}}"
+    description: "Create a new standard SQS queue"
+    tags: [sqs, aws, create]
+  - name: "Create FIFO queue"
+    cmd: "aws sqs create-queue --queue-name {{queue_name}}.fifo --attributes FifoQueue=true,ContentBasedDeduplication=true"
+    description: "Create a FIFO queue"
+    tags: [sqs, aws, create]
+  - name: "Get queue attributes"
+    cmd: "aws sqs get-queue-attributes --queue-url {{queue_url}} --attribute-names All"
+    description: "Get all attributes of a queue"
+    tags: [sqs, aws, inspect]
+  - name: "Send message"
+    cmd: "aws sqs send-message --queue-url {{queue_url}} --message-body '{{message_body}}'"
+    description: "Send a single message to a queue"
+    tags: [sqs, aws, send]
+  - name: "Receive messages"
+    cmd: "aws sqs receive-message --queue-url {{queue_url}} --max-number-of-messages {{count}} --wait-time-seconds 10"
+    description: "Poll and receive messages"
+    tags: [sqs, aws, receive]
+  - name: "Delete message"
+    cmd: "aws sqs delete-message --queue-url {{queue_url}} --receipt-handle {{receipt_handle}}"
+    description: "Delete a specific message by receipt handle"
+    tags: [sqs, aws, delete]
+  - name: "Purge queue (delete all messages)"
+    cmd: "aws sqs purge-queue --queue-url {{queue_url}}"
+    description: "Delete ALL messages in the queue immediately"
+    tags: [sqs, aws, delete]
+    dangerous: true
+  - name: "Delete queue"
+    cmd: "aws sqs delete-queue --queue-url {{queue_url}}"
+    description: "Permanently delete an SQS queue"
+    tags: [sqs, aws, delete]
+    dangerous: true
+  - name: "Set queue visibility timeout"
+    cmd: "aws sqs set-queue-attributes --queue-url {{queue_url}} --attributes VisibilityTimeout={{seconds}}"
+    description: "Update how long messages are hidden after being received"
+    tags: [sqs, aws, config]
+  - name: "Get queue depth (approx. message count)"
+    cmd: "aws sqs get-queue-attributes --queue-url {{queue_url}} --attribute-names ApproximateNumberOfMessages"
+    description: "Check how many messages are waiting in the queue"
+    tags: [sqs, aws, inspect]

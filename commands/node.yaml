@@ -1,0 +1,68 @@
+group: Node.js
+icon: "🟢"
+commands:
+  - name: "Initialize new project"
+    cmd: "npm init -y"
+    description: "Create a new package.json with defaults"
+    tags: [node, setup]
+  - name: "Install dependencies"
+    cmd: "npm install"
+    description: "Install all packages from package.json"
+    tags: [node, packages]
+  - name: "Install package"
+    cmd: "npm install {{package_name}}"
+    description: "Add a new package to the project"
+    tags: [node, packages]
+  - name: "Install package (dev)"
+    cmd: "npm install --save-dev {{package_name}}"
+    description: "Add a package as a dev dependency"
+    tags: [node, packages]
+  - name: "Uninstall package"
+    cmd: "npm uninstall {{package_name}}"
+    description: "Remove a package from the project"
+    tags: [node, packages]
+  - name: "Run start script"
+    cmd: "npm start"
+    description: "Run the start script from package.json"
+    tags: [node, run]
+  - name: "Run dev script"
+    cmd: "npm run dev"
+    description: "Run the dev script (usually with hot-reload)"
+    tags: [node, run]
+  - name: "Run build"
+    cmd: "npm run build"
+    description: "Build the project for production"
+    tags: [node, build, deploy]
+  - name: "Run tests"
+    cmd: "npm test"
+    description: "Run the test suite"
+    tags: [node, testing]
+  - name: "List outdated packages"
+    cmd: "npm outdated"
+    description: "Check which packages have newer versions"
+    tags: [node, packages]
+  - name: "Update all packages"
+    cmd: "npm update"
+    description: "Update packages to their latest allowed versions"
+    tags: [node, packages]
+  - name: "Audit for vulnerabilities"
+    cmd: "npm audit"
+    description: "Check for known security vulnerabilities"
+    tags: [node, security]
+  - name: "Fix audit vulnerabilities"
+    cmd: "npm audit fix"
+    description: "Automatically fix vulnerability issues"
+    tags: [node, security]
+  - name: "List globally installed packages"
+    cmd: "npm list -g --depth=0"
+    description: "Show all globally installed npm packages"
+    tags: [node, packages]
+  - name: "Clear npm cache"
+    cmd: "npm cache clean --force"
+    description: "Clear the npm package cache"
+    tags: [node, cache]
+    dangerous: true
+  - name: "Run with Node directly"
+    cmd: "node {{filename}}.js"
+    description: "Run a JavaScript file directly with Node"
+    tags: [node, run]

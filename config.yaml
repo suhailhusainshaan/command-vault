@@ -1,0 +1,8 @@
+version: "1.0"
+shell: zsh
+theme: default
+alias: commands
+show_status_bar: true
+context_detection: true
+history_limit: 100
+editor: "${EDITOR:-vim}"

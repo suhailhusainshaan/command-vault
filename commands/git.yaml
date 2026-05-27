@@ -1,0 +1,52 @@
+group: Git
+icon: "🔀"
+commands:
+  - name: "Status"
+    cmd: "git status"
+    tags: [git]
+  - name: "Pretty log (graph)"
+    cmd: "git log --oneline --graph --decorate --all"
+    description: "Visual branch graph in terminal"
+    tags: [git, log]
+  - name: "Stage all changes"
+    cmd: "git add -A"
+    tags: [git]
+  - name: "Commit with message"
+    cmd: "git commit -m '{{message}}'"
+    tags: [git]
+  - name: "Push current branch"
+    cmd: "git push origin $(git branch --show-current)"
+    tags: [git, push]
+  - name: "Force push (with lease - safe)"
+    cmd: "git push --force-with-lease"
+    description: "Safe force push; fails if remote has changes you have not fetched"
+    tags: [git, push]
+  - name: "Pull with rebase"
+    cmd: "git pull --rebase"
+    tags: [git, pull]
+  - name: "Create and switch to new branch"
+    cmd: "git checkout -b {{branch_name}}"
+    tags: [git, branch]
+  - name: "Undo last commit (keep changes staged)"
+    cmd: "git reset --soft HEAD~1"
+    tags: [git, undo]
+    dangerous: true
+  - name: "Stash changes"
+    cmd: "git stash push -m '{{stash_message}}'"
+    tags: [git, stash]
+  - name: "Pop stash"
+    cmd: "git stash pop"
+    tags: [git, stash]
+  - name: "Interactive rebase"
+    cmd: "git rebase -i HEAD~{{n}}"
+    description: "Interactively edit last N commits"
+    tags: [git, rebase]
+    dangerous: true
+  - name: "Delete local merged branches"
+    cmd: "git branch --merged | grep -v 'main\\|master\\|develop' | xargs git branch -d"
+    description: "Clean up local branches already merged into main"
+    tags: [git, branch, cleanup]
+    dangerous: true
+  - name: "Cherry pick commit"
+    cmd: "git cherry-pick {{commit_hash}}"
+    tags: [git]

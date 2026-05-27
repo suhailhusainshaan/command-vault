@@ -1,0 +1,39 @@
+group: Filament
+icon: "🪄"
+commands:
+  - name: "Install Filament panels"
+    cmd: "composer require filament/filament:\"^3.3\" -W && php artisan filament:install --panels"
+    description: "Install and initialize Filament panel builder"
+    tags: [filament, setup]
+  - name: "Create admin user"
+    cmd: "php artisan make:filament-user"
+    description: "Create a new Filament admin panel user"
+    tags: [filament, setup]
+  - name: "Make Filament resource"
+    cmd: "php artisan make:filament-resource {{ModelName}} --generate"
+    description: "Create a Filament resource with auto-generated form/table"
+    tags: [filament, make]
+  - name: "Make Filament resource (simple)"
+    cmd: "php artisan make:filament-resource {{ModelName}} --simple"
+    description: "Create a modal-based (simple) Filament resource"
+    tags: [filament, make]
+  - name: "Make Filament page"
+    cmd: "php artisan make:filament-page {{PageName}}"
+    description: "Create a custom Filament admin page"
+    tags: [filament, make]
+  - name: "Make Filament widget"
+    cmd: "php artisan make:filament-widget {{WidgetName}}"
+    description: "Create a dashboard widget"
+    tags: [filament, make]
+  - name: "Make Filament relation manager"
+    cmd: "php artisan make:filament-relation-manager {{ResourceName}} {{relationship}} {{attribute}}"
+    description: "Create a relation manager for a resource"
+    tags: [filament, make]
+  - name: "Optimize Filament (production)"
+    cmd: "php artisan filament:optimize"
+    description: "Cache Filament components and icons for production"
+    tags: [filament, deploy, cache]
+  - name: "Clear Filament cache"
+    cmd: "php artisan filament:optimize-clear"
+    description: "Clear all Filament component caches"
+    tags: [filament, cache]
