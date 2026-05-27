@@ -115,11 +115,16 @@ Opens the main menu with all your command groups.
 | `↑` / `↓` | Navigate commands |
 | `Enter` | Run selected command |
 | `/` | Open fuzzy search |
-| `f` | Toggle Favorite from the command preview action menu |
-| `F` | Open Favorites view |
-| `r` | Open Recents view |
-| `c` | Copy command from the command preview action menu |
-| `q` / `Esc` | Go back / Quit |
+| `Ctrl+A` | Add a new command |
+| `Ctrl+E` | Edit selected command |
+| `Ctrl+D` | Delete selected command |
+| `Ctrl+T` | Toggle Favorite on selected command |
+| `Ctrl+F` | Open Favorites view |
+| `Ctrl+R` | Open Recents view |
+| `Ctrl+C` | Copy command to clipboard (no run) |
+| `Ctrl+W` | Open Workflows |
+| `Ctrl+P` | Switch workspace profile |
+| `Ctrl+Q` / `Esc` | Go back / Quit |
 
 ---
 
@@ -219,13 +224,14 @@ Or press `e` on any command in the preview pane.
 
 ## Deleting Commands
 
-MVP deletion is handled by editing the relevant YAML file:
+You can delete the currently selected command by pressing `Ctrl+D`. 
+Forge will prompt you for confirmation and securely remove it from the underlying YAML file.
+
+You can also manually delete commands by editing their YAML files:
 
 ```bash
 commands edit laravel
 ```
-
-Dedicated `commands delete` commands are part of the Week 4 roadmap.
 
 ---
 

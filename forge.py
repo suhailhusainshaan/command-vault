@@ -457,6 +457,38 @@ def search_home(commands: list[ForgeCommand], title: str = "Commands") -> int:
             continue
         if selected == "__quit__":
             return 0
+        if selected == "__add__":
+            add_command(argparse.Namespace(from_history=False, name=None, cmd=None, group=None, description=None, tags="", dangerous=False))
+            if title in ("Commands", "Search All Commands"):
+                commands = load_commands()
+            continue
+        if selected == "__edit__":
+            edit_group(None)
+            if title in ("Commands", "Search All Commands"):
+                commands = load_commands()
+            continue
+        if isinstance(selected, tuple):
+            action, cmd = selected
+            if action == "__edit_cmd__":
+                edit_group(cmd.group)
+                if title in ("Commands", "Search All Commands"):
+                    commands = load_commands()
+                continue
+            if action == "__delete_cmd__":
+                delete_command(cmd)
+                if title in ("Commands", "Search All Commands"):
+                    commands = load_commands()
+                continue
+            if action == "__toggle_fav__":
+                toggle_favorite(cmd)
+                continue
+            if action == "__copy_cmd__":
+                execute_command(cmd, copy_only=True)
+                continue
+            if action in ("__workflows__", "__profile__"):
+                console.print(f"[yellow]{action.strip('_')} not implemented yet.[/yellow]")
+                time.sleep(1)
+                continue
         if isinstance(selected, ForgeCommand):
             status = command_picker([selected], "Run command")
             if status == GO_BACK:
@@ -607,9 +639,64 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         event.app.exit(result=None)
 
     @kb.add(Keys.ControlQ, eager=True)
-    @kb.add(Keys.ControlC, eager=True)
     def _quit(event):
         event.app.exit(result="__quit__")
+
+    @kb.add(Keys.ControlA, eager=True)
+    def _add_shortcut(event):
+        event.app.exit(result="__add__")
+
+    @kb.add(Keys.ControlE, eager=True)
+    def _edit_shortcut(event):
+        its = visible_items()
+        if not its:
+            event.app.exit(result="__edit__")
+            return
+        selected = its[selected_index]
+        if isinstance(selected, ForgeCommand):
+            event.app.exit(result=("__edit_cmd__", selected))
+        else:
+            event.app.exit(result="__edit__")
+
+    @kb.add(Keys.ControlD, eager=True)
+    def _del_shortcut(event):
+        its = visible_items()
+        if its:
+            selected = its[selected_index]
+            if isinstance(selected, ForgeCommand):
+                event.app.exit(result=("__delete_cmd__", selected))
+
+    @kb.add(Keys.ControlT, eager=True)
+    def _fav_toggle_shortcut(event):
+        its = visible_items()
+        if its:
+            selected = its[selected_index]
+            if isinstance(selected, ForgeCommand):
+                event.app.exit(result=("__toggle_fav__", selected))
+
+    @kb.add(Keys.ControlF, eager=True)
+    def _favs_shortcut(event):
+        event.app.exit(result="__favorites__")
+
+    @kb.add(Keys.ControlR, eager=True)
+    def _recs_shortcut(event):
+        event.app.exit(result="__recents__")
+
+    @kb.add(Keys.ControlC, eager=True)
+    def _copy_shortcut(event):
+        its = visible_items()
+        if its:
+            selected = its[selected_index]
+            if isinstance(selected, ForgeCommand):
+                event.app.exit(result=("__copy_cmd__", selected))
+
+    @kb.add(Keys.ControlW, eager=True)
+    def _workflows_shortcut(event):
+        event.app.exit(result=("__workflows__", None))
+
+    @kb.add(Keys.ControlP, eager=True)
+    def _profile_shortcut(event):
+        event.app.exit(result=("__profile__", None))
 
     @kb.add(Keys.ControlM, eager=True)
     def _enter(event):
@@ -900,9 +987,58 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
         event.app.exit(result=GO_BACK)
 
     @kb.add(Keys.ControlQ, eager=True)
-    @kb.add(Keys.ControlC, eager=True)
     def _quit(event):
         event.app.exit(result=0)
+
+    @kb.add(Keys.ControlA, eager=True)
+    def _add_shortcut(event):
+        event.app.exit(result=("__add__", None))
+
+    @kb.add(Keys.ControlE, eager=True)
+    def _edit_shortcut(event):
+        its = filtered()
+        if not its:
+            event.app.exit(result=("__edit__", None))
+            return
+        cmd = its[selected_index] if selected_index < len(its) else its[0]
+        event.app.exit(result=("__edit_cmd__", cmd))
+
+    @kb.add(Keys.ControlD, eager=True)
+    def _del_shortcut(event):
+        its = filtered()
+        if its:
+            cmd = its[selected_index] if selected_index < len(its) else its[0]
+            event.app.exit(result=("__delete_cmd__", cmd))
+
+    @kb.add(Keys.ControlT, eager=True)
+    def _fav_toggle_shortcut(event):
+        its = filtered()
+        if its:
+            cmd = its[selected_index] if selected_index < len(its) else its[0]
+            event.app.exit(result=("__toggle_fav__", cmd))
+
+    @kb.add(Keys.ControlF, eager=True)
+    def _favs_shortcut(event):
+        event.app.exit(result=("__favorites__", None))
+
+    @kb.add(Keys.ControlR, eager=True)
+    def _recs_shortcut(event):
+        event.app.exit(result=("__recents__", None))
+
+    @kb.add(Keys.ControlC, eager=True)
+    def _copy_shortcut(event):
+        its = filtered()
+        if its:
+            cmd = its[selected_index] if selected_index < len(its) else its[0]
+            event.app.exit(result=("__copy_cmd__", cmd))
+
+    @kb.add(Keys.ControlW, eager=True)
+    def _workflows_shortcut(event):
+        event.app.exit(result=("__workflows__", None))
+
+    @kb.add(Keys.ControlP, eager=True)
+    def _profile_shortcut(event):
+        event.app.exit(result=("__profile__", None))
 
     @kb.add(Keys.ControlM, eager=True)
     def _enter(event):
@@ -942,6 +1078,30 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
         return GO_BACK
 
     action_type, cmd = result
+    if action_type == "__add__":
+        add_command(argparse.Namespace(from_history=False, name=None, cmd=None, group=None, description=None, tags="", dangerous=False))
+        return GO_BACK
+    if action_type == "__edit__":
+        edit_group(None)
+        return GO_BACK
+    if action_type == "__edit_cmd__":
+        edit_group(cmd.group)
+        return GO_BACK
+    if action_type == "__delete_cmd__":
+        delete_command(cmd)
+        return GO_BACK
+    if action_type == "__toggle_fav__":
+        toggle_favorite(cmd)
+        return GO_BACK
+    if action_type == "__copy_cmd__":
+        execute_command(cmd, copy_only=True)
+        return GO_BACK
+    if action_type in ("__favorites__", "__recents__", "__workflows__", "__profile__"):
+        if action_type in ("__workflows__", "__profile__"):
+            console.print(f"[yellow]{action_type.strip('_')} not implemented yet.[/yellow]")
+            time.sleep(1)
+        return GO_BACK
+
     if action_type == "run":
         status = execute_command(cmd)
         if status != GO_BACK:
@@ -1242,6 +1402,21 @@ def edit_group(group: str | None) -> int:
     if not path:
         return 130
     return subprocess.call([editor, str(path)])
+
+
+def delete_command(command: ForgeCommand) -> None:
+    if not command.source_file or not command.source_file.exists():
+        console.print("[red]Cannot delete: Source file not found.[/red]")
+        time.sleep(1.5)
+        return
+    if not questionary.confirm(f"Delete command '{command.name}' from {command.group}?", default=False).ask():
+        return
+    data = load_yaml(command.source_file, {})
+    cmds = data.get("commands", [])
+    data["commands"] = [c for c in cmds if c.get("name") != command.name or c.get("cmd") != command.cmd]
+    write_yaml(command.source_file, data)
+    console.print(f"[green]Deleted '{command.name}'.[/green]")
+    time.sleep(1)
 
 
 def setup(verbose: bool = True) -> int:
