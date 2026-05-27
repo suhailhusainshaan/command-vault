@@ -43,8 +43,16 @@ install_files() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
   if [ -n "$script_dir" ] && [ -f "$script_dir/forge.py" ]; then
+    if [ "$script_dir" = "$INSTALL_DIR" ]; then
+      return
+    fi
+
     mkdir -p "$INSTALL_DIR"
-    cp -R "$script_dir/." "$INSTALL_DIR/"
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -a --exclude='.git' "$script_dir/" "$INSTALL_DIR/"
+    else
+      cp -R "$script_dir/." "$INSTALL_DIR/"
+    fi
     return
   fi
 
@@ -110,11 +118,9 @@ main() {
   log "Shell detected: $shell_name ($rc_file sourced)"
   log "Run: commands"
 
-  printf '\n\033[1;33m?\033[0m Set up a keyboard shortcut to launch Forge? (\033[1mCtrl+Shift+C\033[0m or \033[1mCtrl+G\033[0m) [y/N] '
-  read -r setup_kb
-  if [ "$setup_kb" = "y" ] || [ "$setup_kb" = "Y" ]; then
-    "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/forge.py" keybind
-  fi
+  log "Configuring Forge keyboard shortcuts..."
+  "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/forge.py" keybind
+  log "Keyboard shortcuts configured: Ctrl+Shift+C or Ctrl+G"
 }
 
 main "$@"
