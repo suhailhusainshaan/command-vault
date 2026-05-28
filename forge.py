@@ -513,6 +513,7 @@ def is_dir_jump_mode(q: str) -> bool:
 def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | str | tuple | None:
     query = ""
     selected_index = 0
+    start_index = 0
     max_results = 25
     colors = get_theme_colors()
     style = build_style(colors)
@@ -610,17 +611,34 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         return 0
 
     def render():
+        nonlocal start_index
         clamp_index()
         its = visible_items()
         cols = shutil.get_terminal_size((100, 30)).columns - 2
         box_w = max(72, min(110, cols))
+        lines = shutil.get_terminal_size((100, 30)).lines
+
+        top_lines = 5
+        bottom_lines = 5
+        max_visible = max(3, lines - top_lines - bottom_lines - 2)
+
+        if selected_index < start_index:
+            start_index = selected_index
+        elif selected_index >= start_index + max_visible:
+            start_index = selected_index - max_visible + 1
+
+        if start_index >= len(its):
+            start_index = 0
+        start_index = max(0, start_index)
+
+        visible_its = its[start_index : start_index + max_visible]
 
         tokens: list[tuple[str, str]] = [
             ("class:title", f" FORGE — {title}\n"),
             ("class:border", "┌" + "─" * (box_w - 2) + "┐\n"),
         ]
 
-        search_w = box_w - 10
+        search_w = box_w - 7
         search_display = short_text(query, search_w) if query else "Type to search commands..."
         search_fill = " " * (search_w - len(search_display))
         tokens.append(("class:border", "│"))
@@ -644,11 +662,12 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
                 else:
                     tokens.append(("class:help", f"\n  {shown} of {total} results\n"))
                 
-                for idx, item in enumerate(its):
+                for idx, item in enumerate(visible_its):
                     if isinstance(item, tuple) and item[1].startswith("__") and item[1] != "__error__":
                         continue
-                    ptr = "▸ " if idx == selected_index else "  "
-                    sty = "class:selected" if idx == selected_index else "class:item"
+                    actual_idx = start_index + idx
+                    ptr = "▸ " if actual_idx == selected_index else "  "
+                    sty = "class:selected" if actual_idx == selected_index else "class:item"
                     tokens.append((sty, f"  {ptr}{item_label(item)}\n"))
                 
                 if not is_dir_jump and total > max_results:
@@ -659,9 +678,10 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
                 tokens.append(("class:help", '  Add commands with: commands add\n'))
             else:
                 tokens.append(("", "\n"))
-                for idx, item in enumerate(its):
-                    ptr = "▸ " if idx == selected_index else "  "
-                    sty = "class:selected" if idx == selected_index else "class:item"
+                for idx, item in enumerate(visible_its):
+                    actual_idx = start_index + idx
+                    ptr = "▸ " if actual_idx == selected_index else "  "
+                    sty = "class:selected" if actual_idx == selected_index else "class:item"
                     tokens.append((sty, f"  {ptr}{item_label(item)}\n"))
 
         tokens.append(("class:border", "\n┌" + "─" * (box_w - 2) + "┐\n"))
@@ -691,29 +711,33 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
 
     @kb.add(Keys.Backspace, eager=True)
     def _backspace(event):
-        nonlocal query, selected_index, current_peek_path
+        nonlocal query, selected_index, current_peek_path, start_index
         if is_dir_jump_mode(query) and current_peek_path:
             current_peek_path = current_peek_path.parent
             selected_index = 0
+            start_index = 0
             return
         query = query[:-1]
         current_peek_path = None
         selected_index = 0
+        start_index = 0
 
     @kb.add(Keys.ControlU, eager=True)
     def _clear(event):
-        nonlocal query, selected_index, current_peek_path
+        nonlocal query, selected_index, current_peek_path, start_index
         query = ""
         current_peek_path = None
         selected_index = 0
+        start_index = 0
 
     @kb.add(Keys.Escape, eager=True)
     def _escape(event):
-        nonlocal query, selected_index, current_peek_path
+        nonlocal query, selected_index, current_peek_path, start_index
         if query:
             query = ""
             current_peek_path = None
             selected_index = 0
+            start_index = 0
             return
         event.app.exit(result=None)
 
@@ -800,16 +824,17 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
 
     @kb.add(Keys.Any)
     def _type(event):
-        nonlocal query, selected_index, current_peek_path
+        nonlocal query, selected_index, current_peek_path, start_index
         char = event.data
         if char and char.isprintable():
             query += char
             current_peek_path = None
             selected_index = 0
+            start_index = 0
 
     @kb.add(Keys.Tab, eager=True)
     def _tab(event):
-        nonlocal current_peek_path, selected_index
+        nonlocal current_peek_path, selected_index, start_index
         if is_dir_jump_mode(query):
             its = visible_items()
             if its and selected_index < len(its):
@@ -817,10 +842,11 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
                 if isinstance(item, tuple) and len(item) == 3 and item[2] == "dir":
                     current_peek_path = Path(item[1])
                     selected_index = 0
+                    start_index = 0
 
     @kb.add(Keys.Right, eager=True)
     def _right(event):
-        nonlocal current_peek_path, selected_index
+        nonlocal current_peek_path, selected_index, start_index
         if is_dir_jump_mode(query):
             its = visible_items()
             if its and selected_index < len(its):
@@ -828,13 +854,15 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
                 if isinstance(item, tuple) and len(item) == 3 and item[2] == "dir":
                     current_peek_path = Path(item[1])
                     selected_index = 0
+                    start_index = 0
 
     @kb.add(Keys.Left, eager=True)
     def _left(event):
-        nonlocal current_peek_path, selected_index
+        nonlocal current_peek_path, selected_index, start_index
         if is_dir_jump_mode(query) and current_peek_path:
             current_peek_path = current_peek_path.parent
             selected_index = 0
+            start_index = 0
 
     app = Application(
         layout=Layout(HSplit([Window(FormattedTextControl(render), always_hide_cursor=False)])),
@@ -1007,6 +1035,7 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
 
     query = ""
     selected_index = 0
+    start_index = 0
     colors = get_theme_colors()
     style = build_style(colors)
     counts = usage_counts()
@@ -1025,17 +1054,39 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
             selected_index = max(0, min(selected_index, len(items) - 1))
 
     def render():
+        nonlocal start_index
         clamp_index()
         items = filtered()
         cols = shutil.get_terminal_size((100, 30)).columns - 2
         box_w = max(72, min(110, cols))
+        lines = shutil.get_terminal_size((100, 30)).lines
+
+        top_lines = 5
+        bottom_lines = 2
+        preview_lines = 0
+        if items:
+            selected_cmd = items[selected_index] if selected_index < len(items) else items[0]
+            preview_lines = 3 + len(format_preview_tokens(selected_cmd, counts))
+
+        max_visible = max(3, lines - top_lines - bottom_lines - preview_lines - 2)
+
+        if selected_index < start_index:
+            start_index = selected_index
+        elif selected_index >= start_index + max_visible:
+            start_index = selected_index - max_visible + 1
+
+        if start_index >= len(items):
+            start_index = 0
+        start_index = max(0, start_index)
+
+        visible_items = items[start_index : start_index + max_visible]
 
         tokens: list[tuple[str, str]] = [
             ("class:title", f" FORGE — {title}\n"),
             ("class:border", "┌" + "─" * (box_w - 2) + "┐\n"),
         ]
 
-        search_w = box_w - 8
+        search_w = box_w - 7
         search_display = short_text(query, search_w) if query else "Type to filter..."
         search_fill = " " * (search_w - len(search_display))
         tokens.append(("class:border", "│"))
@@ -1047,9 +1098,10 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
             tokens.append(("class:muted", "  No matching commands\n\n"))
         else:
             tokens.append(("", "\n"))
-            for idx, cmd in enumerate(items):
-                ptr = "▸ " if idx == selected_index else "  "
-                sty = "class:selected" if idx == selected_index else "class:item"
+            for idx, cmd in enumerate(visible_items):
+                actual_idx = start_index + idx
+                ptr = "▸ " if actual_idx == selected_index else "  "
+                sty = "class:selected" if actual_idx == selected_index else "class:item"
                 label = command_item_label(cmd, counts, show_badge=True)
                 line = short_text(f"{ptr}{label}", box_w - 2)
                 tokens.append((sty, f"  {line}\n"))
@@ -1057,10 +1109,14 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
         if items:
             selected_cmd = items[selected_index] if selected_index < len(items) else items[0]
             tokens.append(("", "\n"))
-            tokens.append(("class:preview_border", "  ┌─ Preview " + "─" * (box_w - 16) + "┐\n"))
+            tokens.append(("class:preview_border", "  ┌─ Preview " + "─" * (box_w - 15) + "┐\n"))
             preview_tokens = format_preview_tokens(selected_cmd, counts)
             for pt in preview_tokens:
-                tokens.append((pt[0], f"  │{pt[1].rstrip()}{' ' * (box_w - 6 - len(pt[1].rstrip()))}│\n"))
+                content = pt[1].rstrip()
+                if len(content) > box_w - 4:
+                    content = short_text(content, box_w - 4)
+                padding_len = max(0, box_w - 4 - len(content))
+                tokens.append((pt[0], f"  │{content}{' ' * padding_len}│\n"))
             tokens.append(("class:preview_border", "  └" + "─" * (box_w - 4) + "┘\n"))
 
         tokens.append(("\n", ""))
@@ -1086,22 +1142,25 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
 
     @kb.add(Keys.Backspace, eager=True)
     def _backspace(event):
-        nonlocal query, selected_index
+        nonlocal query, selected_index, start_index
         query = query[:-1]
         selected_index = 0
+        start_index = 0
 
     @kb.add(Keys.ControlU, eager=True)
     def _clear(event):
-        nonlocal query, selected_index
+        nonlocal query, selected_index, start_index
         query = ""
         selected_index = 0
+        start_index = 0
 
     @kb.add(Keys.Escape, eager=True)
     def _escape(event):
-        nonlocal query, selected_index
+        nonlocal query, selected_index, start_index
         if query:
             query = ""
             selected_index = 0
+            start_index = 0
             return
         event.app.exit(result=GO_BACK)
 
@@ -1177,11 +1236,12 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
 
     @kb.add(Keys.Any)
     def _type(event):
-        nonlocal query, selected_index
+        nonlocal query, selected_index, start_index
         char = event.data
         if char and char.isprintable():
             query += char
             selected_index = 0
+            start_index = 0
 
     app = Application(
         layout=Layout(HSplit([Window(FormattedTextControl(render), always_hide_cursor=False)])),
@@ -1245,6 +1305,7 @@ def group_picker(commands: list[ForgeCommand], title: str = "Select a command gr
     colors = get_theme_colors()
     style = build_style(colors)
     selected_index = 0
+    start_index = 0
     groups = list(grouped(commands).items())
     groups.sort(key=lambda x: -len(x[1]))
 
@@ -1264,10 +1325,27 @@ def group_picker(commands: list[ForgeCommand], title: str = "Select a command gr
         selected_index = max(0, min(selected_index, len(its) - 1))
 
     def render():
+        nonlocal start_index
         clamp_index()
         its = visible()
         cols = shutil.get_terminal_size((100, 30)).columns - 2
         box_w = max(72, min(110, cols))
+        lines = shutil.get_terminal_size((100, 30)).lines
+
+        top_lines = 4
+        bottom_lines = 2
+        max_visible = max(3, lines - top_lines - bottom_lines - 2)
+
+        if selected_index < start_index:
+            start_index = selected_index
+        elif selected_index >= start_index + max_visible:
+            start_index = selected_index - max_visible + 1
+
+        if start_index >= len(its):
+            start_index = 0
+        start_index = max(0, start_index)
+
+        visible_its = its[start_index : start_index + max_visible]
 
         tokens: list[tuple[str, str]] = [
             ("class:title", f" FORGE — {title}\n"),
@@ -1276,10 +1354,11 @@ def group_picker(commands: list[ForgeCommand], title: str = "Select a command gr
             ("class:border", "╞" + "═" * (box_w - 2) + "╡\n"),
         ]
 
-        for idx, item in enumerate(its):
-            ptr = "▸ " if idx == selected_index else "  "
-            sty = "class:selected" if idx == selected_index else ("class:item" if isinstance(item, tuple) is False else "class:nav")
-            if isinstance(item, tuple):
+        for idx, item in enumerate(visible_its):
+            actual_idx = start_index + idx
+            ptr = "▸ " if actual_idx == selected_index else "  "
+            sty = "class:selected" if actual_idx == selected_index else ("class:item" if isinstance(item, tuple) is False else "class:nav")
+            if isinstance(item, tuple) and len(item) == 2 and isinstance(item[1], list):
                 name, items_in_group = item
                 icon = items_in_group[0].icon if items_in_group else ""
                 label = f"{icon} {name}  ({len(items_in_group)} commands)"
