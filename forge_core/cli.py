@@ -80,6 +80,8 @@ def execute_command(command: ForgeCommand, *, dry_run: bool = False, copy_only: 
     if command.dangerous and not confirm_danger(command_text):
         console.print("[yellow]Cancelled.[/yellow]")
         return 130
+    from .system import append_to_shell_history
+    append_to_shell_history(command_text)
     status = run_shell(command_text)
     if status == 0:
         record_usage(command)
@@ -119,6 +121,13 @@ def group_menu(commands: list[ForgeCommand], title: str = "Select a command grou
                 questionary.press_any_key_to_continue().ask()
                 continue
             continue
+        if selected == "History":
+            from .ui import load_history_commands
+            status = command_picker(load_history_commands(limit=100), "History")
+            if status != GO_BACK:
+                questionary.press_any_key_to_continue().ask()
+                continue
+            continue
         groups = grouped(commands)
         status = command_picker(groups[selected], selected)
         if status != GO_BACK:
@@ -131,9 +140,27 @@ def search_home(commands: list[ForgeCommand], title: str = "Commands") -> int:
         selected = search_picker(commands, title)
         if selected is None:
             return GO_BACK
+        if isinstance(selected, str) and selected.startswith("__run_raw__:"):
+            raw_cmd = selected.removeprefix("__run_raw__:")
+            cmd_obj = ForgeCommand(
+                name=raw_cmd,
+                cmd=raw_cmd,
+                group="Ad hoc",
+                icon="⚡",
+                description="Ad-hoc raw command execution",
+                tags=["raw"],
+            )
+            status = execute_command(cmd_obj)
+            if status != GO_BACK:
+                questionary.press_any_key_to_continue().ask()
+            continue
         if isinstance(selected, str) and selected.startswith("__group__:"):
             group_name = selected.removeprefix("__group__:")
-            status = command_picker(grouped(load_commands()).get(group_name, []), group_name)
+            if group_name == "History":
+                from .ui import load_history_commands
+                status = command_picker(load_history_commands(limit=100), "History")
+            else:
+                status = command_picker(grouped(load_commands()).get(group_name, []), group_name)
             if status != GO_BACK:
                 questionary.press_any_key_to_continue().ask()
                 continue

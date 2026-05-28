@@ -1,6 +1,7 @@
 import os
 import shutil
 import questionary
+import time
 from pathlib import Path
 from prompt_toolkit import Application
 from prompt_toolkit.key_binding import KeyBindings
@@ -14,7 +15,7 @@ from rich.panel import Panel
 from rich.text import Text
 from .models import console, ForgeCommand, GO_BACK
 from .db import load_config, usage_counts, recent_keys, load_commands
-from .system import status_line, run_shell, copy_command
+from .system import status_line, run_shell, copy_command, current_git_branch, running_docker_count
 from .search import ranked_commands
 
 def grouped(commands: list[ForgeCommand]) -> dict[str, list[ForgeCommand]]:
@@ -106,9 +107,10 @@ def get_theme_colors() -> dict:
         "preview_body": "",
         "help": "#888888",
         "groups_header": "",
+        "cursor": "bold #00ff00 bg:#005f5f",
     }
     if theme == "minimal":
-        base.update({"border": "#555555", "title": "bold", "search_bg": "", "search_fg": "", "selected": "bold", "badge": "#888888", "favorite": "#aaaaaa", "preview_border": "#888888"})
+        base.update({"border": "#555555", "title": "bold", "search_bg": "", "search_fg": "", "selected": "bold", "badge": "#888888", "favorite": "#aaaaaa", "preview_border": "#888888", "cursor": "bold #aaaaaa"})
     elif theme == "compact":
         base.update({"help": "#666666", "muted": "#555555"})
     return base
@@ -131,10 +133,11 @@ def build_style(colors: dict) -> Style:
         "preview_body": colors["preview_body"],
         "help": colors["help"],
         "groups_header": colors["groups_header"],
+        "cursor": colors["cursor"],
     })
 
 def command_item_label(command: ForgeCommand, counts: dict[str, int] | None = None, show_badge: bool = True) -> str:
-    fav = "★ " if command.favorite else ""
+    fav = "★  " if command.favorite else ""
     cnt = (counts or {}).get(command.key, 0)
     badge = f" [{cnt}x]" if show_badge and cnt > 0 else ""
     desc = short_text(command.description, 50)
@@ -179,6 +182,205 @@ def show_action_overlay(command: ForgeCommand) -> str | None:
 def is_dir_jump_mode(q: str) -> bool:
     return any(q.startswith(prefix) for prefix in ["/", "~/", "./", "../", ".."])
 
+_status_cache = {
+    "git_branch": None,
+    "docker_count": None,
+    "last_git_update": 0.0,
+    "last_docker_update": 0.0,
+    "last_cwd": None,
+}
+
+def get_pretty_cwd() -> str:
+    try:
+        cwd = os.getcwd()
+        home = str(Path.home())
+        if cwd.startswith(home):
+            cwd = "~" + cwd[len(home):]
+        return cwd
+    except Exception:
+        return "Unknown"
+
+def get_cached_git_branch() -> str | None:
+    current_cwd = os.getcwd()
+    now = time.time()
+    if _status_cache["last_cwd"] != current_cwd or now - _status_cache["last_git_update"] > 3.0:
+        _status_cache["git_branch"] = current_git_branch()
+        _status_cache["last_git_update"] = now
+        _status_cache["last_cwd"] = current_cwd
+    return _status_cache["git_branch"]
+
+def get_cached_docker_count() -> int | None:
+    now = time.time()
+    if now - _status_cache["last_docker_update"] > 5.0:
+        _status_cache["docker_count"] = running_docker_count()
+        _status_cache["last_docker_update"] = now
+    return _status_cache["docker_count"]
+
+def get_system_status() -> list[str]:
+    parts = []
+    parts.append(f"📁 {get_pretty_cwd()}")
+    branch = get_cached_git_branch()
+    if branch:
+        parts.append(f"🔀 {branch}")
+    docker_running = get_cached_docker_count()
+    if docker_running is not None:
+        parts.append(f"🐳 {docker_running} running")
+    aws = os.environ.get("AWS_PROFILE")
+    if aws:
+        parts.append(f"☁️ AWS: {aws}")
+    venv = os.environ.get("VIRTUAL_ENV")
+    if venv:
+        parts.append(f"🐍 {Path(venv).name}")
+    return parts
+
+def get_shortcuts(picker_type: str) -> list[list[str]]:
+    if picker_type == "group":
+        return [
+            ["↑/↓ Navigate", "Enter Select", "Esc Back", "q/Q Quit"],
+            ["/ Search All", "f/F Favorites", "r/R Recents", ""]
+        ]
+    else:
+        return [
+            ["/ Search", "Ctrl+A Add Cmd", "Ctrl+E Edit Cmd", "Ctrl+D Delete"],
+            ["Ctrl+T Favorite", "Ctrl+F Favorites", "Ctrl+R Recents", "Ctrl+Q/Esc Quit"]
+        ]
+
+def get_footer_height(lines: int, picker_type: str) -> int:
+    if lines >= 24:
+        return 6 if picker_type == "group" else 8
+    elif lines >= 15:
+        return 5
+    else:
+        return 3
+
+def visual_len(s: str) -> int:
+    try:
+        from wcwidth import wcswidth
+        w = wcswidth(s)
+        return w if w >= 0 else len(s)
+    except Exception:
+        double_width_chars = ["📁", "🔀", "🐳", "☁️", "🐍", "⚡", "★"]
+        length = 0
+        for char in s:
+            if char in double_width_chars:
+                length += 2
+            elif char == "\ufe0f":
+                pass
+            else:
+                length += 1
+        return length
+
+def build_footer_tokens(box_w: int, lines: int, picker_type: str) -> list[tuple[str, str]]:
+    tokens: list[tuple[str, str]] = []
+    if lines >= 24:
+        tokens.append(("class:border", "\n┌── System Status " + "─" * (box_w - 19) + "┐\n"))
+        status_items = get_system_status()
+        status_line = "  ·  ".join(status_items)
+        if visual_len(status_line) > box_w - 4:
+            cwd_pretty = get_pretty_cwd()
+            cwd_limit = int(box_w * 0.35)
+            cwd_short = f"📁 {short_text(cwd_pretty, cwd_limit)}"
+            branch = get_cached_git_branch()
+            branch_short = f"🔀 {short_text(branch, 15)}" if branch else ""
+            docker_running = get_cached_docker_count()
+            docker_short = f"🐳 {docker_running}" if docker_running is not None else ""
+            aws = os.environ.get("AWS_PROFILE")
+            aws_short = f"☁️ {short_text(aws, 10)}" if aws else ""
+            parts = [p for p in [cwd_short, branch_short, docker_short, aws_short] if p]
+            status_line = "  ·  ".join(parts)
+        status_line = short_text(status_line, box_w - 4)
+        padding_len = max(0, box_w - 4 - visual_len(status_line))
+        tokens.append(("class:border", "│ "))
+        tokens.append(("", status_line))
+        tokens.append(("class:border", " " * padding_len + " │\n"))
+        tokens.append(("class:border", "├── Keyboard Shortcuts " + "─" * (box_w - 24) + "┤\n"))
+        shortcuts = get_shortcuts(picker_type)
+        col_width = max(10, (box_w - 8) // 4)
+        for row in shortcuts:
+            formatted_row = ""
+            for idx, col in enumerate(row):
+                cell = short_text(col, col_width).ljust(col_width)
+                if idx > 0:
+                    formatted_row += " │ "
+                formatted_row += cell
+            formatted_row = formatted_row[:box_w - 4]
+            pad = max(0, box_w - 4 - len(formatted_row))
+            tokens.append(("class:border", "│ "))
+            tokens.append(("class:help", formatted_row + " " * pad))
+            tokens.append(("class:border", " │\n"))
+        tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
+    elif lines >= 15:
+        tokens.append(("class:border", "\n┌── System Status " + "─" * (box_w - 19) + "┐\n"))
+        status_items = get_system_status()
+        status_line = "  ·  ".join(status_items)
+        if visual_len(status_line) > box_w - 4:
+            cwd_pretty = get_pretty_cwd()
+            cwd_limit = int(box_w * 0.35)
+            cwd_short = f"📁 {short_text(cwd_pretty, cwd_limit)}"
+            branch = get_cached_git_branch()
+            branch_short = f"🔀 {short_text(branch, 15)}" if branch else ""
+            parts = [p for p in [cwd_short, branch_short] if p]
+            status_line = "  ·  ".join(parts)
+        status_line = short_text(status_line, box_w - 4)
+        padding_len = max(0, box_w - 4 - visual_len(status_line))
+        tokens.append(("class:border", "│ "))
+        tokens.append(("", status_line))
+        tokens.append(("class:border", " " * padding_len + " │\n"))
+        tokens.append(("class:border", "├── Shortcuts " + "─" * (box_w - 15) + "┤\n"))
+        if picker_type == "group":
+            shortcut_line = "↑/↓ Navigate  │  Enter Select  │  Esc Back  │  q/Q Quit"
+        else:
+            shortcut_line = "↑/↓ Navigate  │  Enter Run  │  / Search  │  Esc Back"
+        shortcut_line = short_text(shortcut_line, box_w - 4)
+        pad = max(0, box_w - 4 - len(shortcut_line))
+        tokens.append(("class:border", "│ "))
+        tokens.append(("class:help", shortcut_line + " " * pad))
+        tokens.append(("class:border", " │\n"))
+        tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
+    else:
+        tokens.append(("class:border", "\n┌" + "─" * (box_w - 2) + "┐\n"))
+        if picker_type == "group":
+            shortcuts_str = "↑↓ Navigate    ↵ Select    Esc Back"
+        else:
+            shortcuts_str = "↵ Select   / Type to search   Esc Clear/Back   ^Q Quit"
+        shortcuts_str = short_text(shortcuts_str, box_w - 4)
+        pad = max(0, box_w - 4 - len(shortcuts_str))
+        tokens.append(("class:border", "│ "))
+        tokens.append(("class:help", shortcuts_str + " " * pad))
+        tokens.append(("class:border", " │\n"))
+        tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
+    return tokens
+
+def load_history_commands(limit: int = 50) -> list[ForgeCommand]:
+    from .commands_mgmt import shell_history_path, parse_history_line
+    history_path = shell_history_path()
+    if not history_path or not history_path.exists():
+        return []
+    seen = set()
+    history_cmds = []
+    try:
+        lines = history_path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        for line in reversed(lines):
+            command_text = parse_history_line(line)
+            if command_text and command_text not in seen:
+                if command_text.startswith("commands") or command_text.startswith("forge") or command_text.startswith("./forge"):
+                    continue
+                seen.add(command_text)
+                cmd_obj = ForgeCommand(
+                    name=command_text,
+                    cmd=command_text,
+                    group="History",
+                    icon="⏱ ",
+                    description="Run from terminal history",
+                    tags=["history"],
+                )
+                history_cmds.append(cmd_obj)
+                if len(history_cmds) >= limit:
+                    break
+    except Exception:
+        pass
+    return history_cmds
+
 def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | str | tuple | None:
     query = ""
     selected_index = 0
@@ -190,21 +392,29 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
     current_peek_path: Path | None = None
 
     nav_items: list[tuple[str, str, str]] = [
-        ("★ Favorites", "__favorites__"),
-        ("⏱ Recents", "__recents__"),
-        ("✕ Quit", "__quit__"),
+        ("★  Favorites", "__favorites__"),
+        ("⏱  Recents", "__recents__"),
+        ("✕  Quit", "__quit__"),
     ]
 
     def group_items() -> list[tuple[str, str, str]]:
         grps = grouped(commands)
-        return [
+        history_cmds = load_history_commands(limit=100)
+        history_count = len(history_cmds)
+        history_item = (
+            f" ⏱ History  ({history_count} commands)",
+            "__group__:History",
+            "group",
+        )
+        group_list = [
             (
-                f"{items[0].icon} {name}  ({len(items)} commands)",
+                f"{items[0].icon or '📁'} {name}  ({len(items)} commands)",
                 f"__group__:{name}",
                 "group",
             )
             for name, items in sorted(grps.items(), key=lambda x: -len(x[1]))
         ]
+        return [history_item] + group_list
 
     def visible_items() -> list[ForgeCommand | tuple[str, str, str]]:
         if is_dir_jump_mode(query):
@@ -261,7 +471,8 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
 
         if query.strip():
             command_results = ranked_commands(commands, query)[:max_results]
-            return [*command_results, *nav_items]
+            raw_item = (f"⚡ Run raw: '{query}'", f"__run_raw__:{query}", "raw")
+            return [*command_results, raw_item, *nav_items]
         return [*group_items(), *nav_items]
 
     def clamp_index() -> None:
@@ -288,7 +499,8 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         lines = shutil.get_terminal_size((100, 30)).lines
 
         top_lines = 5
-        bottom_lines = 5
+        footer_height = get_footer_height(lines, "search")
+        bottom_lines = footer_height + 1
         max_visible = max(3, lines - top_lines - bottom_lines - 2)
 
         if selected_index < start_index:
@@ -308,10 +520,19 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         ]
 
         search_w = box_w - 7
-        search_display = short_text(query, search_w) if query else "Type to search commands..."
-        search_fill = " " * (search_w - len(search_display))
         tokens.append(("class:border", "│"))
-        tokens.append(("class:search", f" 🔍 {search_display}{search_fill} "))
+        tokens.append(("class:search", " 🔍 "))
+        if query:
+            display_text = short_text(query, search_w - 2)
+            fill_len = search_w - 1 - len(display_text)
+            tokens.append(("class:search", display_text))
+            tokens.append(("class:cursor", "┃"))
+            tokens.append(("class:search", " " * fill_len))
+        else:
+            tokens.append(("class:cursor", "┃"))
+            placeholder = "Type to search commands..."
+            fill_len = search_w - 1 - len(placeholder)
+            tokens.append(("class:search", placeholder + " " * fill_len))
         tokens.append(("class:border", "│\n"))
         tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
 
@@ -319,20 +540,16 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         if is_dir_jump or query.strip():
             total = len(its) if is_dir_jump else total_matches()
             shown = len(its) if is_dir_jump else min(total, max_results)
-            if total == 0:
-                if is_dir_jump:
-                    tokens.append(("class:muted", f"\n  No files found in directory\n"))
-                else:
-                    tokens.append(("class:muted", f"\n  No commands match \"{query}\"\n"))
-                    tokens.append(("class:help", "  Try a different search term\n"))
+            if is_dir_jump and total == 0:
+                tokens.append(("class:muted", f"\n  No files found in directory\n"))
             else:
                 if is_dir_jump:
                     tokens.append(("class:help", f"\n  {shown} items in directory\n"))
                 else:
-                    tokens.append(("class:help", f"\n  {shown} of {total} results\n"))
+                    tokens.append(("class:help", f"\n  {total} matching commands\n"))
                 
                 for idx, item in enumerate(visible_its):
-                    if isinstance(item, tuple) and item[1].startswith("__") and item[1] != "__error__":
+                    if isinstance(item, tuple) and item[1].startswith("__") and item[1] != "__error__" and not item[1].startswith("__run_raw__"):
                         continue
                     actual_idx = start_index + idx
                     ptr = "▸ " if actual_idx == selected_index else "  "
@@ -353,13 +570,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
                     sty = "class:selected" if actual_idx == selected_index else "class:item"
                     tokens.append((sty, f"  {ptr}{item_label(item)}\n"))
 
-        tokens.append(("class:border", "\n┌" + "─" * (box_w - 2) + "┐\n"))
-        tokens.append(("class:border", "│"))
-        shortcuts = "↵ Select   / Type to search   Esc Clear/Back   ^Q Quit"
-        pad = box_w - 4 - len(shortcuts)
-        tokens.append(("class:help", f" {shortcuts}{' ' * pad} "))
-        tokens.append(("class:border", "│\n"))
-        tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
+        tokens.extend(build_footer_tokens(box_w, lines, "search"))
         return tokens
 
     kb = KeyBindings()
@@ -528,8 +739,18 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
     @kb.add(Keys.Left, eager=True)
     def _left(event):
         nonlocal current_peek_path, selected_index, start_index
-        if is_dir_jump_mode(query) and current_peek_path:
-            current_peek_path = current_peek_path.parent
+        if is_dir_jump_mode(query):
+            if current_peek_path:
+                current_peek_path = current_peek_path.parent.resolve()
+            else:
+                raw_path = os.getcwd() if query in ("./", ".") else os.path.expanduser(query)
+                if raw_path == "..":
+                    raw_path = "../"
+                p = Path(raw_path).resolve()
+                if p.is_dir():
+                    current_peek_path = p.parent.resolve()
+                else:
+                    current_peek_path = p.parent.parent.resolve()
             selected_index = 0
             start_index = 0
 
@@ -576,7 +797,8 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
         lines = shutil.get_terminal_size((100, 30)).lines
 
         top_lines = 5
-        bottom_lines = 2
+        footer_height = get_footer_height(lines, "command")
+        bottom_lines = footer_height + 1
         preview_lines = 0
         if items:
             selected_cmd = items[selected_index] if selected_index < len(items) else items[0]
@@ -601,10 +823,19 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
         ]
 
         search_w = box_w - 7
-        search_display = short_text(query, search_w) if query else "Type to filter..."
-        search_fill = " " * (search_w - len(search_display))
         tokens.append(("class:border", "│"))
-        tokens.append(("class:search", f" 🔍 {search_display}{search_fill} "))
+        tokens.append(("class:search", " 🔍 "))
+        if query:
+            display_text = short_text(query, search_w - 2)
+            fill_len = search_w - 1 - len(display_text)
+            tokens.append(("class:search", display_text))
+            tokens.append(("class:cursor", "┃"))
+            tokens.append(("class:search", " " * fill_len))
+        else:
+            tokens.append(("class:cursor", "┃"))
+            placeholder = "Type to filter..."
+            fill_len = search_w - 1 - len(placeholder)
+            tokens.append(("class:search", placeholder + " " * fill_len))
         tokens.append(("class:border", "│\n"))
         tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
 
@@ -623,7 +854,7 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
         if items:
             selected_cmd = items[selected_index] if selected_index < len(items) else items[0]
             tokens.append(("", "\n"))
-            tokens.append(("class:preview_border", "  ┌─ Preview " + "─" * (box_w - 15) + "┐\n"))
+            tokens.append(("class:preview_border", "  ┌─ Preview " + "─" * (box_w - 14) + "┐\n"))
             preview_tokens = format_preview_tokens(selected_cmd, counts)
             for pt in preview_tokens:
                 content = pt[1].rstrip()
@@ -633,9 +864,7 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
                 tokens.append((pt[0], f"  │{content}{' ' * padding_len}│\n"))
             tokens.append(("class:preview_border", "  └" + "─" * (box_w - 4) + "┘\n"))
 
-        tokens.append(("\n", ""))
-        tokens.append(("class:help", f"  {'↵ Run':<16}{'Tab: Actions':<16}{'↑↓ Navigate':<16}{'Esc: Back':<16}\n"))
-
+        tokens.extend(build_footer_tokens(box_w, lines, "command"))
         return tokens
 
     kb = KeyBindings()
@@ -781,7 +1010,9 @@ def group_picker(commands: list[ForgeCommand], title: str = "Select a command gr
     ]
 
     def visible():
-        return [*groups, *nav_items]
+        history_cmds = load_history_commands(limit=100)
+        history_group = ("History", history_cmds)
+        return [history_group, *groups, *nav_items]
 
     def clamp_index():
         nonlocal selected_index
@@ -797,7 +1028,8 @@ def group_picker(commands: list[ForgeCommand], title: str = "Select a command gr
         lines = shutil.get_terminal_size((100, 30)).lines
 
         top_lines = 4
-        bottom_lines = 2
+        footer_height = get_footer_height(lines, "group")
+        bottom_lines = footer_height + 1
         max_visible = max(3, lines - top_lines - bottom_lines - 2)
 
         if selected_index < start_index:
@@ -833,8 +1065,7 @@ def group_picker(commands: list[ForgeCommand], title: str = "Select a command gr
                 line = short_text(f"{ptr}{label}", box_w - 4)
                 tokens.append((sty, f"  {line}\n"))
 
-        tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
-        tokens.append(("class:help", f"  {'↑↓ Navigate':<20}{'↵ Select':<20}{'Esc: Back':<20}\n"))
+        tokens.extend(build_footer_tokens(box_w, lines, "group"))
         return tokens
 
     kb = KeyBindings()

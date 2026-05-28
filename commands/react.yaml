@@ -1,5 +1,5 @@
 group: React
-icon: "⚛️"
+icon: "⚛️ "
 commands:
   - name: "Create React app (Vite)"
     cmd: "npm create vite@latest {{app_name}} -- --template react"

@@ -56,6 +56,33 @@ def shell_path() -> str:
         return shutil.which(configured) or configured
     return os.environ.get("SHELL") or "/bin/bash"
 
+def append_to_shell_history(command_text: str) -> None:
+    shell_name = Path(os.environ.get("SHELL", "")).name
+    candidates = []
+    if shell_name == "zsh":
+        candidates.append(Path.home() / ".zsh_history")
+    if shell_name == "bash":
+        candidates.append(Path.home() / ".bash_history")
+    candidates.extend([Path.home() / ".zsh_history", Path.home() / ".bash_history"])
+    
+    history_path = None
+    for candidate in candidates:
+        if candidate.exists():
+            history_path = candidate
+            break
+            
+    if not history_path:
+        return
+        
+    try:
+        with history_path.open("a", encoding="utf-8", errors="ignore") as f:
+            if history_path.name == ".zsh_history":
+                f.write(f": {int(time.time())}:0;{command_text}\n")
+            else:
+                f.write(f"{command_text}\n")
+    except Exception:
+        pass
+
 def run_shell(command_text: str) -> int:
     start = time.time()
     console.print(Panel(f"[cyan]{command_text}[/cyan]", title="Running", border_style="green"))

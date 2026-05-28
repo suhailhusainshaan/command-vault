@@ -1,5 +1,5 @@
 group: System
-icon: "⚙️"
+icon: "⚙️ "
 commands:
   - name: "Show disk usage"
     cmd: "df -h"
