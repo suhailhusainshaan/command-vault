@@ -531,7 +531,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         else:
             tokens.append(("class:cursor", "┃"))
             placeholder = "Type to search commands..."
-            fill_len = search_w - 1 - len(placeholder)
+            fill_len = search_w  - len(placeholder)
             tokens.append(("class:search", placeholder + " " * fill_len))
         tokens.append(("class:border", "│\n"))
         tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
@@ -834,7 +834,7 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
         else:
             tokens.append(("class:cursor", "┃"))
             placeholder = "Type to filter..."
-            fill_len = search_w - 1 - len(placeholder)
+            fill_len = search_w - len(placeholder)
             tokens.append(("class:search", placeholder + " " * fill_len))
         tokens.append(("class:border", "│\n"))
         tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
