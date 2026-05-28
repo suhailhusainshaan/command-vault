@@ -81,17 +81,36 @@ configure_shell() {
   fi
 
   touch "$rc_file"
-  local alias_line
-  alias_line="alias commands='$INSTALL_DIR/.venv/bin/python $INSTALL_DIR/forge.py'"
+  local function_def
+  function_def=$(cat << 'EOF'
+forge_cli() {
+    local cmd_file="$HOME/.forge/.forge_cmd_buffer"
+    rm -f "$cmd_file"
 
-  if ! grep -F "$alias_line" "$rc_file" >/dev/null 2>&1; then
+    "$HOME/.forge/.venv/bin/python" "$HOME/.forge/forge.py" "$@"
+    local exit_code=$?
+
+    if [ -f "$cmd_file" ]; then
+        local next_cmd=$(cat "$cmd_file")
+        rm -f "$cmd_file"
+        if [ -n "$next_cmd" ]; then
+            eval "$next_cmd"
+        fi
+    fi
+    return $exit_code
+}
+alias commands="forge_cli"
+EOF
+)
+
+  if ! grep -F 'forge_cli()' "$rc_file" >/dev/null 2>&1; then
     sed -i.bak '/alias forge=.*\/forge.py/d' "$rc_file"
     sed -i.bak '/alias commands=.*\/forge.py/d' "$rc_file"
     sed -i.bak "/alias f='forge'/d" "$rc_file"
     sed -i.bak "/alias f='commands'/d" "$rc_file"
     {
       printf '\n# Forge - Developer Command Operating System\n'
-      printf "%s\n" "$alias_line"
+      printf "%s\n" "$function_def"
       printf "alias f='commands'\n"
     } >> "$rc_file"
   fi

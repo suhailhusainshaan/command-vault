@@ -485,6 +485,12 @@ def search_home(commands: list[ForgeCommand], title: str = "Commands") -> int:
             if action == "__copy_cmd__":
                 execute_command(cmd, copy_only=True)
                 continue
+
+            if action == "__cd__":
+                cmd_buffer = Path.home() / ".forge" / ".forge_cmd_buffer"
+                if cmd_buffer.parent.exists():
+                    cmd_buffer.write_text(f"cd '{cmd}'\n", encoding="utf-8")
+                return 0
             if action in ("__workflows__", "__profile__"):
                 console.print(f"[yellow]{action.strip('_')} not implemented yet.[/yellow]")
                 time.sleep(1)
@@ -500,13 +506,18 @@ def command_menu(commands: list[ForgeCommand], title: str) -> int:
     return command_picker(commands, title)
 
 
-def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | str | None:
+
+def is_dir_jump_mode(q: str) -> bool:
+    return any(q.startswith(prefix) for prefix in ["/", "~/", "./", "../", ".."])
+
+def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | str | tuple | None:
     query = ""
     selected_index = 0
     max_results = 25
     colors = get_theme_colors()
     style = build_style(colors)
     counts = usage_counts()
+    current_peek_path: Path | None = None
 
     nav_items: list[tuple[str, str, str]] = [
         ("★ Favorites", "__favorites__"),
@@ -526,6 +537,58 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         ]
 
     def visible_items() -> list[ForgeCommand | tuple[str, str, str]]:
+        if is_dir_jump_mode(query):
+            if current_peek_path:
+                target_dir = current_peek_path
+                filter_text = ""
+            else:
+                raw_path = os.path.expanduser(query)
+                if raw_path == "..":
+                    raw_path = "../"
+                
+                if query.endswith("/") or raw_path.endswith("/"):
+                    target_dir = Path(raw_path)
+                    filter_text = ""
+                else:
+                    p = Path(raw_path)
+                    if p.is_dir():
+                        target_dir = p
+                        filter_text = ""
+                    else:
+                        target_dir = p.parent
+                        filter_text = p.name
+
+            try:
+                if not target_dir.exists() or not target_dir.is_dir():
+                    return []
+            except Exception:
+                return []
+
+            try:
+                items = list(target_dir.iterdir())
+            except PermissionError:
+                return [("🚫 Permission Denied", "__error__", "error")]
+            except Exception:
+                return []
+            
+            if not query.endswith("."):
+                items = [i for i in items if not i.name.startswith(".")]
+            
+            if filter_text:
+                filter_lower = filter_text.lower()
+                items = [i for i in items if filter_lower in i.name.lower()]
+                
+            items.sort(key=lambda x: (not x.is_dir(), x.name.lower()))
+            
+            res = []
+            for idx, i in enumerate(items):
+                if idx >= 500:
+                    res.append(("... (Too many files to display)", "__error__", "error"))
+                    break
+                icon = "📁" if i.is_dir() else "📄"
+                res.append((f"{icon} {i.name}", str(i), "dir" if i.is_dir() else "file"))
+            return res
+
         if query.strip():
             command_results = ranked_commands(commands, query)[:max_results]
             return [*command_results, *nav_items]
@@ -565,21 +628,30 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         tokens.append(("class:border", "│\n"))
         tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
 
-        if query.strip():
-            total = total_matches()
-            shown = min(total, max_results)
+        is_dir_jump = is_dir_jump_mode(query)
+        if is_dir_jump or query.strip():
+            total = len(its) if is_dir_jump else total_matches()
+            shown = len(its) if is_dir_jump else min(total, max_results)
             if total == 0:
-                tokens.append(("class:muted", f"\n  No commands match \"{query}\"\n"))
-                tokens.append(("class:help", "  Try a different search term\n"))
+                if is_dir_jump:
+                    tokens.append(("class:muted", f"\n  No files found in directory\n"))
+                else:
+                    tokens.append(("class:muted", f"\n  No commands match \"{query}\"\n"))
+                    tokens.append(("class:help", "  Try a different search term\n"))
             else:
-                tokens.append(("class:help", f"\n  {shown} of {total} results\n"))
+                if is_dir_jump:
+                    tokens.append(("class:help", f"\n  {shown} items in directory\n"))
+                else:
+                    tokens.append(("class:help", f"\n  {shown} of {total} results\n"))
+                
                 for idx, item in enumerate(its):
-                    if isinstance(item, tuple) and item[1].startswith("__"):
+                    if isinstance(item, tuple) and item[1].startswith("__") and item[1] != "__error__":
                         continue
                     ptr = "▸ " if idx == selected_index else "  "
                     sty = "class:selected" if idx == selected_index else "class:item"
                     tokens.append((sty, f"  {ptr}{item_label(item)}\n"))
-                if total > max_results:
+                
+                if not is_dir_jump and total > max_results:
                     tokens.append(("class:muted", f"  ... and {total - max_results} more\n"))
         else:
             if not its:
@@ -619,21 +691,28 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
 
     @kb.add(Keys.Backspace, eager=True)
     def _backspace(event):
-        nonlocal query, selected_index
+        nonlocal query, selected_index, current_peek_path
+        if is_dir_jump_mode(query) and current_peek_path:
+            current_peek_path = current_peek_path.parent
+            selected_index = 0
+            return
         query = query[:-1]
+        current_peek_path = None
         selected_index = 0
 
     @kb.add(Keys.ControlU, eager=True)
     def _clear(event):
-        nonlocal query, selected_index
+        nonlocal query, selected_index, current_peek_path
         query = ""
+        current_peek_path = None
         selected_index = 0
 
     @kb.add(Keys.Escape, eager=True)
     def _escape(event):
-        nonlocal query, selected_index
+        nonlocal query, selected_index, current_peek_path
         if query:
             query = ""
+            current_peek_path = None
             selected_index = 0
             return
         event.app.exit(result=None)
@@ -704,6 +783,16 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         if not its:
             return
         selected = its[selected_index]
+        if is_dir_jump_mode(query):
+            if isinstance(selected, tuple) and selected[1] == "__error__":
+                return
+            if isinstance(selected, tuple):
+                path = selected[1]
+                if len(selected) > 2 and selected[2] == "file":
+                    path = str(Path(path).parent)
+                event.app.exit(result=("__cd__", path))
+            return
+
         if isinstance(selected, tuple):
             event.app.exit(result=selected[1])
         else:
@@ -711,10 +800,40 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
 
     @kb.add(Keys.Any)
     def _type(event):
-        nonlocal query, selected_index
+        nonlocal query, selected_index, current_peek_path
         char = event.data
         if char and char.isprintable():
             query += char
+            current_peek_path = None
+            selected_index = 0
+
+    @kb.add(Keys.Tab, eager=True)
+    def _tab(event):
+        nonlocal current_peek_path, selected_index
+        if is_dir_jump_mode(query):
+            its = visible_items()
+            if its and selected_index < len(its):
+                item = its[selected_index]
+                if isinstance(item, tuple) and len(item) == 3 and item[2] == "dir":
+                    current_peek_path = Path(item[1])
+                    selected_index = 0
+
+    @kb.add(Keys.Right, eager=True)
+    def _right(event):
+        nonlocal current_peek_path, selected_index
+        if is_dir_jump_mode(query):
+            its = visible_items()
+            if its and selected_index < len(its):
+                item = its[selected_index]
+                if isinstance(item, tuple) and len(item) == 3 and item[2] == "dir":
+                    current_peek_path = Path(item[1])
+                    selected_index = 0
+
+    @kb.add(Keys.Left, eager=True)
+    def _left(event):
+        nonlocal current_peek_path, selected_index
+        if is_dir_jump_mode(query) and current_peek_path:
+            current_peek_path = current_peek_path.parent
             selected_index = 0
 
     app = Application(
