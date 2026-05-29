@@ -11,7 +11,7 @@ from rich.table import Table
 
 from .models import (
     console,
-    ForgeCommand,
+    CommandVaultCommand,
     VERSION,
     APP_DIR,
     CONFIG_PATH,
@@ -46,7 +46,7 @@ from .ui import (
 )
 from .commands_mgmt import add_command, edit_group, delete_command
 
-def interpolate(command: ForgeCommand) -> str | None:
+def interpolate(command: CommandVaultCommand) -> str | None:
     command_text = command.cmd
     # Find variables inside {{ }}
     seen: list[str] = []
@@ -63,7 +63,7 @@ def interpolate(command: ForgeCommand) -> str | None:
         command_text = re.sub(r"{{\s*" + re.escape(name) + r"\s*}}", answer, command_text)
     return command_text
 
-def execute_command(command: ForgeCommand, *, dry_run: bool = False, copy_only: bool = False) -> int:
+def execute_command(command: CommandVaultCommand, *, dry_run: bool = False, copy_only: bool = False) -> int:
     command_text = interpolate(command)
     if command_text is None:
         return 130
@@ -87,7 +87,7 @@ def execute_command(command: ForgeCommand, *, dry_run: bool = False, copy_only: 
         record_usage(command)
     return status
 
-def group_menu(commands: list[ForgeCommand], title: str = "Select a command group") -> int:
+def group_menu(commands: list[CommandVaultCommand], title: str = "Select a command group") -> int:
     while True:
         selected = group_picker(commands, title)
         if selected in (None, "__quit__"):
@@ -134,7 +134,7 @@ def group_menu(commands: list[ForgeCommand], title: str = "Select a command grou
             questionary.press_any_key_to_continue().ask()
             continue
 
-def search_home(commands: list[ForgeCommand], title: str = "Commands") -> int:
+def search_home(commands: list[CommandVaultCommand], title: str = "Commands") -> int:
     while True:
         console.clear()
         selected = search_picker(commands, title)
@@ -142,7 +142,7 @@ def search_home(commands: list[ForgeCommand], title: str = "Commands") -> int:
             return GO_BACK
         if isinstance(selected, str) and selected.startswith("__run_raw__:"):
             raw_cmd = selected.removeprefix("__run_raw__:")
-            cmd_obj = ForgeCommand(
+            cmd_obj = CommandVaultCommand(
                 name=raw_cmd,
                 cmd=raw_cmd,
                 group="Ad hoc",
@@ -221,7 +221,7 @@ def search_home(commands: list[ForgeCommand], title: str = "Commands") -> int:
                 continue
 
             if action == "__cd__":
-                cmd_buffer = Path.home() / ".forge" / ".forge_cmd_buffer"
+                cmd_buffer = Path.home() / ".command-vault" / ".command_vault_cmd_buffer"
                 if cmd_buffer.parent.exists():
                     cmd_buffer.write_text(f"cd '{cmd}'\n", encoding="utf-8")
                 try:
@@ -236,14 +236,14 @@ def search_home(commands: list[ForgeCommand], title: str = "Commands") -> int:
                 console.print(f"[yellow]{action.strip('_')} not implemented yet.[/yellow]")
                 time.sleep(1)
                 continue
-        if isinstance(selected, ForgeCommand):
+        if isinstance(selected, CommandVaultCommand):
             status = command_picker([selected], "Run command")
             if status == GO_BACK:
                 continue
             questionary.press_any_key_to_continue().ask()
             continue
 
-def command_picker(commands: list[ForgeCommand], title: str) -> int:
+def command_picker(commands: list[CommandVaultCommand], title: str) -> int:
     result = ui_command_picker(commands, title)
 
     if result is None or result == 0:
@@ -295,10 +295,10 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
         return GO_BACK
     return GO_BACK
 
-def command_menu(commands: list[ForgeCommand], title: str) -> int:
+def command_menu(commands: list[CommandVaultCommand], title: str) -> int:
     return command_picker(commands, title)
 
-def search_menu(commands: list[ForgeCommand], query: str | None = None) -> int:
+def search_menu(commands: list[CommandVaultCommand], query: str | None = None) -> int:
     if query is None:
         return live_command_filter(commands, "Search All Commands")
     if not query:
@@ -317,10 +317,10 @@ def search_menu(commands: list[ForgeCommand], query: str | None = None) -> int:
     status = command_menu(results, f"Search: {query}")
     return 0 if status == GO_BACK else status
 
-def live_command_filter(commands: list[ForgeCommand], title: str) -> int:
+def live_command_filter(commands: list[CommandVaultCommand], title: str) -> int:
     return search_home(commands, title)
 
-def toggle_favorite(command: ForgeCommand) -> None:
+def toggle_favorite(command: CommandVaultCommand) -> None:
     favorites = load_favorites()
     if command.key in favorites:
         favorites.remove(command.key)
@@ -330,7 +330,7 @@ def toggle_favorite(command: ForgeCommand) -> None:
         console.print(f"[green]Added favorite:[/green] {command.name}")
     save_favorites(favorites)
 
-def find_command(commands: list[ForgeCommand], *, name: str | None = None, cmd: str | None = None) -> ForgeCommand | None:
+def find_command(commands: list[CommandVaultCommand], *, name: str | None = None, cmd: str | None = None) -> CommandVaultCommand | None:
     if cmd:
         for command in commands:
             if command.cmd == cmd:
@@ -357,7 +357,7 @@ def setup(verbose: bool = True) -> int:
                 "version": "1.0",
                 "shell": Path(os.environ.get("SHELL", "zsh")).name or "zsh",
                 "theme": "default",
-                "alias": "commands",
+                "alias": "vault",
                 "show_status_bar": True,
                 "context_detection": True,
                 "history_limit": 100,
@@ -368,13 +368,13 @@ def setup(verbose: bool = True) -> int:
         save_favorites(set())
     init_db()
     if verbose:
-        console.print(f"[green]Forge setup complete in {APP_DIR}[/green]")
+        console.print(f"[green]Command Vault setup complete in {APP_DIR}[/green]")
     return 0
 
 def list_groups() -> int:
     groups_data = grouped(load_commands())
     counts = usage_counts()
-    table = Table(title="Forge Command Groups", box=box.ROUNDED, border_style="cyan")
+    table = Table(title="Command Vault Command Groups", box=box.ROUNDED, border_style="cyan")
     table.add_column("Group", style="bold")
     table.add_column("Commands", justify="right", style="cyan")
     table.add_column("Total Runs", justify="right", style="yellow")
@@ -388,9 +388,9 @@ def list_groups() -> int:
     return 0
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Forge - Developer Command Operating System")
-    parser.add_argument("--version", action="store_true", help="Print Forge version")
-    parser.add_argument("--setup", action="store_true", help="Initialize Forge storage")
+    parser = argparse.ArgumentParser(description="Command Vault - Developer Command Operating System")
+    parser.add_argument("--version", action="store_true", help="Print Command Vault version")
+    parser.add_argument("--setup", action="store_true", help="Initialize Command Vault storage")
     parser.add_argument("--group", help="Open a command group")
     sub = parser.add_subparsers(dest="command")
 
@@ -418,14 +418,14 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("groups", help="List command groups")
     sub.add_parser("recents", help="Open recent commands")
     sub.add_parser("favorites", help="Open favorite commands")
-    sub.add_parser("keybind", help="Set up keyboard shortcut to launch Forge")
+    sub.add_parser("keybind", help="Set up keyboard shortcut to launch Command Vault")
     return parser
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.version:
-        console.print(f"Forge {VERSION}")
+        console.print(f"Command Vault {VERSION}")
         return 0
     if args.setup:
         return setup(verbose=True)
@@ -443,7 +443,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "run":
         command = find_command(commands, name=args.name, cmd=args.cmd)
         if not command and args.cmd:
-            command = ForgeCommand(name=args.cmd, cmd=args.cmd, group="Ad hoc")
+            command = CommandVaultCommand(name=args.cmd, cmd=args.cmd, group="Ad hoc")
         if not command:
             console.print("[red]Command not found.[/red]")
             return 1

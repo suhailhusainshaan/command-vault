@@ -1,0 +1,19 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Local databases and runtime state
+intelligence.db
+favorites.json
+
+# OS metadata
+.DS_Store
+Thumbs.db

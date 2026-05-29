@@ -1,7 +1,7 @@
 version: "1.0"
 shell: zsh
 theme: default
-alias: commands
+alias: vault
 show_status_bar: true
 context_detection: true
 history_limit: 100

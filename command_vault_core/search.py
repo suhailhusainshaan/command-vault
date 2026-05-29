@@ -1,12 +1,12 @@
 from rapidfuzz import fuzz
-from .models import ForgeCommand
+from .models import CommandVaultCommand
 
-def ranked_commands(commands: list[ForgeCommand], query: str) -> list[ForgeCommand]:
+def ranked_commands(commands: list[CommandVaultCommand], query: str) -> list[CommandVaultCommand]:
     normalized = " ".join(query.lower().split())
     if not normalized:
         return commands
 
-    scored: list[tuple[int, str, ForgeCommand]] = []
+    scored: list[tuple[int, str, CommandVaultCommand]] = []
     for command in commands:
         cmd = command.cmd.lower()
         name = command.name.lower()

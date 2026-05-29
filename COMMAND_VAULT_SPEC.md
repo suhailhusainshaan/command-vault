@@ -1,4 +1,4 @@
-# ⚡ Forge — The Developer Command Operating System
+# ⚡ Command Vault — The Developer Command Operating System
 ### *One alias. Every command. Zero friction.*
 
 > A searchable, beautiful, context-aware terminal productivity platform for engineers.
@@ -29,7 +29,7 @@
 
 ### Runtime — Use What's Already on Your Machine
 
-> **Design Principle:** Forge must install and run with zero pre-installed dependencies beyond what ships with macOS or Ubuntu by default. No Go, no Rust, no special runtimes.
+> **Design Principle:** Command Vault must install and run with zero pre-installed dependencies beyond what ships with macOS or Ubuntu by default. No Go, no Rust, no special runtimes.
 
 #### macOS
 | Dependency | Pre-installed? | Version Needed | Notes |
@@ -49,23 +49,23 @@
 | **bash / zsh** | ✅ Yes | Any | Default shell |
 | **curl** | ✅ Yes | Any | Used by installer |
 
-#### Python Packages (Auto-installed by Forge installer)
+#### Python Packages (Auto-installed by Command Vault installer)
 | Package | Purpose |
 |---|---|
 | `rich` | Beautiful terminal rendering, panels, colors |
 | `questionary` | Smooth interactive prompts and menus |
 | `PyYAML` | YAML config file parsing |
-| `rapidfuzz` | Fast fuzzy search across commands |
+| `rapidfuzz` | Fast fuzzy search across vault |
 | `prompt_toolkit` | Advanced keyboard navigation |
 
-> All packages install automatically via `pip3` during Forge setup. No manual steps needed.
+> All packages install automatically via `pip3` during Command Vault setup. No manual steps needed.
 
 #### Optional Power-Ups (Not required)
 | Tool | Purpose | Install |
 |---|---|---|
 | `fzf` | Blazing fast external fuzzy finder | `brew install fzf` / `apt install fzf` |
-| `aws-cli` | Required for AWS/SQS commands to work | `brew install awscli` |
-| `php` + `composer` | Required for Laravel/PHP commands | Per project |
+| `aws-cli` | Required for AWS/SQS vault to work | `brew install awscli` |
+| `php` + `composer` | Required for Laravel/PHP vault | Per project |
 
 #### Why Not Go?
 Go is an excellent language but is **not pre-installed** on macOS or Ubuntu. Requiring users to install a separate runtime defeats the "zero friction" goal. The plan is:
@@ -84,7 +84,7 @@ You are building a **terminal productivity platform for engineers**.
 
 That distinction changes everything: architecture, UX, extensibility, branding, and long-term potential.
 
-**Forge** is:
+**Command Vault** is:
 - A searchable command library
 - A workflow automation engine
 - A context-aware development assistant
@@ -92,19 +92,19 @@ That distinction changes everything: architecture, UX, extensibility, branding, 
 
 ```
 ╭────────────────────────────────────────────────────────────╮
-│  ⚡ FORGE  —  Developer Command Operating System           │
+│  ⚡ COMMAND VAULT  —  Developer Command Operating System           │
 │  AWS: prod · K8s: staging · Git: main · Docker: running   │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
-│  🐍 Python           8 commands                            │
-│  🐘 PHP / Laravel   24 commands                            │
-│  🪄 Filament         9 commands                            │
-│  🟢 Node.js         12 commands                            │
-│  ⚛️  React            8 commands                            │
-│  📬 Amazon SQS      10 commands                            │
-│  🔀 Git             14 commands                            │
-│  🐳 Docker          12 commands                            │
-│  ⚙️  System           8 commands                            │
+│  🐍 Python           8 vault                            │
+│  🐘 PHP / Laravel   24 vault                            │
+│  🪄 Filament         9 vault                            │
+│  🟢 Node.js         12 vault                            │
+│  ⚛️  React            8 vault                            │
+│  📬 Amazon SQS      10 vault                            │
+│  🔀 Git             14 vault                            │
+│  🐳 Docker          12 vault                            │
+│  ⚙️  System           8 vault                            │
 │                                                            │
 │  [/] Search   [a] Add   [f] Favorites   [r] Recent        │
 ╰────────────────────────────────────────────────────────────╯
@@ -181,7 +181,7 @@ Commands with `{{placeholders}}` prompt you to fill values before running:
   cmd: "php artisan make:model {{ModelName}} -m"
 ```
 
-Forge intercepts, prompts for each `{{variable}}`, builds the final command, then executes.
+Command Vault intercepts, prompts for each `{{variable}}`, builds the final command, then executes.
 
 ### 5. Safety Layer for Dangerous Commands
 
@@ -191,7 +191,7 @@ Forge intercepts, prompts for each `{{variable}}`, builds the final command, the
   dangerous: true
 ```
 
-Forge shows a warning panel before any `dangerous: true` command:
+Command Vault shows a warning panel before any `dangerous: true` command:
 
 ```
   ╔══════════════════════════════════════╗
@@ -209,7 +209,7 @@ Forge shows a warning panel before any `dangerous: true` command:
 ### 6. Favorites & Recents
 
 - `[f]` pins any command to Favorites
-- Recent commands auto-surface at the top of each session
+- Recent vault auto-surface at the top of each session
 - Frequency sorting — the more you run it, the higher it floats
 - Dedicated Favorites view (`[f]` key from main menu)
 
@@ -231,11 +231,11 @@ workflows:
 
 ### 8. Directory-Aware Context Detection
 
-Forge detects your project type and surfaces relevant commands:
+Command Vault detects your project type and surfaces relevant vault:
 
 | Detected file | Auto-surface |
 |---|---|
-| `artisan` | Laravel commands group |
+| `artisan` | Laravel vault group |
 | `package.json` | Node / React group |
 | `docker-compose.yml` | Docker group |
 | `terraform` files | Infrastructure group |
@@ -254,7 +254,7 @@ Always visible at the top:
 
 ### 11. Shell History Import
 
-`forge add --from-history` scans `~/.zsh_history` or `~/.bash_history`, shows frequently used commands, and lets you import with one keypress.
+`command-vault add --from-history` scans `~/.zsh_history` or `~/.bash_history`, shows frequently used vault, and lets you import with one keypress.
 
 ### 12. Tags & Filtering
 
@@ -268,7 +268,7 @@ Filter by `#production` or `#dangerous` to scope the view.
 
 ## Command Library
 
-> These are the pre-loaded commands in Forge. All configurable — add, edit, delete anytime.
+> These are the pre-loaded vault in Command Vault. All configurable — add, edit, delete anytime.
 
 ---
 
@@ -277,7 +277,7 @@ Filter by `#production` or `#dangerous` to scope the view.
 ```yaml
 group: Python
 icon: "🐍"
-commands:
+vault:
   - name: "Create virtual environment"
     cmd: "python3 -m venv venv"
     description: "Create a new venv in current directory"
@@ -326,7 +326,7 @@ commands:
 ```yaml
 group: PHP & Laravel
 icon: "🐘"
-commands:
+vault:
   # --- Server & Environment ---
   - name: "Serve application"
     cmd: "php artisan serve"
@@ -558,7 +558,7 @@ commands:
 ```yaml
 group: Filament
 icon: "🪄"
-commands:
+vault:
   - name: "Install Filament panels"
     cmd: "composer require filament/filament:\"^3.3\" -W && php artisan filament:install --panels"
     description: "Install and initialize Filament panel builder"
@@ -612,7 +612,7 @@ commands:
 ```yaml
 group: Node.js
 icon: "🟢"
-commands:
+vault:
   - name: "Initialize new project"
     cmd: "npm init -y"
     description: "Create a new package.json with defaults"
@@ -702,7 +702,7 @@ commands:
 ```yaml
 group: React
 icon: "⚛️"
-commands:
+vault:
   - name: "Create React app (Vite)"
     cmd: "npm create vite@latest {{app_name}} -- --template react"
     description: "Scaffold a new React app using Vite (recommended 2025)"
@@ -761,7 +761,7 @@ commands:
 ```yaml
 group: Amazon SQS
 icon: "📬"
-commands:
+vault:
   - name: "List all queues"
     cmd: "aws sqs list-queues"
     description: "List all SQS queues in your AWS account"
@@ -837,7 +837,7 @@ commands:
 ```yaml
 group: Git
 icon: "🔀"
-commands:
+vault:
   - name: "Status"
     cmd: "git status"
     tags: [git]
@@ -906,7 +906,7 @@ commands:
 ```yaml
 group: Docker
 icon: "🐳"
-commands:
+vault:
   - name: "Compose up (rebuild)"
     cmd: "docker compose up --build"
     tags: [docker]
@@ -966,12 +966,12 @@ commands:
 
 ## Alias System
 
-Forge includes a dedicated **Alias** section. An alias is a short custom command that maps to a Forge group, command, or workflow.
+Command Vault includes a dedicated **Alias** section. An alias is a short custom command that maps to a Command Vault group, command, or workflow.
 
 ### Alias Config Format
 
 ```yaml
-# ~/.forge/aliases.yaml
+# ~/.command-vault/aliases.yaml
 
 aliases:
   # Run a full workflow by short name
@@ -983,14 +983,14 @@ aliases:
   - alias: "lq"
     target_group: "PHP & Laravel"
     filter: "queue"
-    description: "Open Laravel queue commands"
+    description: "Open Laravel queue vault"
 
   # Run a specific command directly, skipping the menu
   - alias: "serve"
     target_cmd: "php artisan serve"
     description: "Start Laravel server immediately"
 
-  # Run multiple commands as a quick sequence
+  # Run multiple vault as a quick sequence
   - alias: "cc"
     target_cmd: "php artisan optimize:clear"
     description: "Clear all Laravel caches"
@@ -998,20 +998,20 @@ aliases:
 
 ### Shell-Level Aliases (Auto-generated)
 
-During setup, Forge writes these to your `~/.zshrc` or `~/.bashrc`:
+During setup, Command Vault writes these to your `~/.zshrc` or `~/.bashrc`:
 
 ```bash
-# Forge — auto-generated aliases
-alias forge='python3 ~/.forge/forge.py'
-alias f='forge'
+# Command Vault — auto-generated aliases
+alias command-vault='python3 ~/.command-vault/command-vault.py'
+alias f='command-vault'
 
-# Optional short aliases (user-configurable in ~/.forge/aliases.yaml)
-alias fserve='forge run --cmd "php artisan serve"'
-alias fmigrate='forge run --cmd "php artisan migrate"'
-alias fqueue='forge group "PHP & Laravel" --filter queue'
+# Optional short aliases (user-configurable in ~/.command-vault/aliases.yaml)
+alias fserve='command-vault run --cmd "php artisan serve"'
+alias fmigrate='command-vault run --cmd "php artisan migrate"'
+alias fqueue='command-vault group "PHP & Laravel" --filter queue'
 ```
 
-Users can add/remove shell-level aliases by editing `~/.forge/aliases.yaml` and running `forge aliases --sync`.
+Users can add/remove shell-level aliases by editing `~/.command-vault/aliases.yaml` and running `command-vault aliases --sync`.
 
 ---
 
@@ -1020,7 +1020,7 @@ Users can add/remove shell-level aliases by editing `~/.forge/aliases.yaml` and 
 ### Adding Commands
 
 **Method 1 — Interactive TUI**
-Press `[a]` from the main menu. Forge walks you through:
+Press `[a]` from the main menu. Command Vault walks you through:
 ```
   Name:         Deploy to staging
   Command:      kubectl apply -f k8s/staging/
@@ -1032,18 +1032,18 @@ Press `[a]` from the main menu. Forge walks you through:
 
 **Method 2 — From shell history**
 ```bash
-forge add --from-history
+command-vault add --from-history
 ```
-Shows recent commands from `~/.zsh_history`, select one, categorize it.
+Shows recent vault from `~/.zsh_history`, select one, categorize it.
 
 **Method 3 — Direct CLI**
 ```bash
-forge add --name "Run migrations" --cmd "php artisan migrate" --group "PHP & Laravel" --tags "laravel,database"
+command-vault add --name "Run migrations" --cmd "php artisan migrate" --group "PHP & Laravel" --tags "laravel,database"
 ```
 
 **Method 4 — Edit YAML directly**
 ```bash
-forge edit laravel     # Opens ~/.forge/commands/laravel.yaml in $EDITOR
+command-vault edit laravel     # Opens ~/.command-vault/vault/laravel.yaml in $EDITOR
 ```
 
 ---
@@ -1051,8 +1051,8 @@ forge edit laravel     # Opens ~/.forge/commands/laravel.yaml in $EDITOR
 ### Editing Commands
 
 ```bash
-forge edit              # Opens interactive group picker, then command picker
-forge edit --group laravel --name "Run migrations"   # Edit specific command
+command-vault edit              # Opens interactive group picker, then command picker
+command-vault edit --group laravel --name "Run migrations"   # Edit specific command
 ```
 
 Or press `[e]` on any command in the preview pane to edit it inline.
@@ -1062,8 +1062,8 @@ Or press `[e]` on any command in the preview pane to edit it inline.
 ### Deleting Commands
 
 ```bash
-forge delete --group laravel --name "Run migrations"   # Delete by name
-forge delete --interactive                              # Pick from TUI
+command-vault delete --group laravel --name "Run migrations"   # Delete by name
+command-vault delete --interactive                              # Pick from TUI
 ```
 
 Or press `[d]` in the command list to delete after confirmation.
@@ -1073,9 +1073,9 @@ Or press `[d]` in the command list to delete after confirmation.
 ### Exporting & Importing
 
 ```bash
-forge export > my-vault.yaml       # Export entire vault to portable file
-forge import my-vault.yaml         # Import from a file (merges, no overwrites)
-forge import https://raw.githubusercontent.com/.../vault.yaml   # Import from URL
+command-vault export > my-vault.yaml       # Export entire vault to portable file
+command-vault import my-vault.yaml         # Import from a file (merges, no overwrites)
+command-vault import https://raw.githubusercontent.com/.../vault.yaml   # Import from URL
 ```
 
 ---
@@ -1084,9 +1084,9 @@ forge import https://raw.githubusercontent.com/.../vault.yaml   # Import from UR
 
 ### Command Intelligence (Killer Feature)
 
-Forge tracks which commands you run and when. Over time it:
-- Auto-suggests related commands after you run one
-- Surfaces commands you haven't used in a while (rediscovery)
+Command Vault tracks which vault you run and when. Over time it:
+- Auto-suggests related vault after you run one
+- Surfaces vault you haven't used in a while (rediscovery)
 - Detects patterns and proposes creating a workflow
 
 ```
@@ -1097,17 +1097,17 @@ Forge tracks which commands you run and when. Over time it:
     → php artisan queue:work
 ```
 
-Data stored in `~/.forge/intelligence.db` (SQLite). Fully local, never leaves your machine.
+Data stored in `~/.command-vault/intelligence.db` (SQLite). Fully local, never leaves your machine.
 
 ### Workspace Profiles
 
 ```bash
-forge workspace payments-service
+command-vault workspace payments-service
 ```
 
 Loads a named profile:
 ```yaml
-# ~/.forge/workspaces/payments-service.yaml
+# ~/.command-vault/workspaces/payments-service.yaml
 name: payments-service
 cwd: ~/projects/payments-service
 env:
@@ -1121,7 +1121,7 @@ pinned_commands:
   - "Tail SQS queue depth"
 ```
 
-Everything — environment, context, pinned commands — loads in one command.
+Everything — environment, context, pinned vault — loads in one command.
 
 ### AI Command Assistant (v3.0, future)
 
@@ -1159,15 +1159,15 @@ Architectured into the data model from day one. Added as an LLM integration in v
 ### Global Config
 
 ```yaml
-# ~/.forge/config.yaml
+# ~/.command-vault/config.yaml
 version: "1.0"
 shell: zsh                  # zsh | bash | fish
 theme: default              # default | minimal | compact
-alias: forge                # main launch alias
+alias: command-vault                # main launch alias
 show_status_bar: true       # live AWS/K8s/Git status line
 context_detection: true     # auto-detect project type
-history_limit: 100          # number of recent commands to track
-editor: $EDITOR             # editor for `forge edit`
+history_limit: 100          # number of recent vault to track
+editor: $EDITOR             # editor for `command-vault edit`
 ```
 
 ---
@@ -1175,13 +1175,13 @@ editor: $EDITOR             # editor for `forge edit`
 ## File Structure
 
 ```
-~/.forge/
-├── forge.py                 # Main application entry point
+~/.command-vault/
+├── command-vault.py                 # Main application entry point
 ├── config.yaml              # Global settings
 ├── aliases.yaml             # Alias definitions
 ├── requirements.txt         # Python dependencies
 │
-├── commands/                # One YAML file per group (editable)
+├── vault/                # One YAML file per group (editable)
 │   ├── python.yaml
 │   ├── laravel.yaml
 │   ├── filament.yaml
@@ -1237,29 +1237,29 @@ editor: $EDITOR             # editor for `forge edit`
 The entire setup — clone, install dependencies, generate config, add alias — happens with a single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/forge/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/yourusername/command-vault/main/install.sh | bash
 ```
 
 Or with `wget`:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/yourusername/forge/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/yourusername/command-vault/main/install.sh | bash
 ```
 
 ### What the installer does (in order):
 
 1. Checks Python 3.9+ is available (prompts to install via Xcode CLI tools if missing on Mac)
-2. Clones the Forge repo into `~/.forge`
-3. Runs `pip3 install -r ~/.forge/requirements.txt`
+2. Clones the Command Vault repo into `~/.command-vault`
+3. Runs `pip3 install -r ~/.command-vault/requirements.txt`
 4. Detects current shell (`zsh` / `bash`)
-5. Writes `alias forge='python3 ~/.forge/forge.py'` to `~/.zshrc` or `~/.bashrc`
+5. Writes `alias command-vault='python3 ~/.command-vault/command-vault.py'` to `~/.zshrc` or `~/.bashrc`
 6. Sources the shell config (`source ~/.zshrc`)
-7. Runs `forge --setup` to initialize config files
+7. Runs `command-vault --setup` to initialize config files
 8. Prints a success message with first steps
 
 After install, the user only needs to type:
 ```bash
-forge
+command-vault
 ```
 
 That's it. No manual config, no PATH changes, no environment setup.
@@ -1284,17 +1284,17 @@ That's it. No manual config, no PATH changes, no environment setup.
 - Beautiful TUI — colors, icons, borders, status bar
 - Favorites system (`[f]` key)
 - Recents and frequency sorting
-- Shell history import (`forge add --from-history`)
+- Shell history import (`command-vault add --from-history`)
 
 ### Week 4 — Power Features
 - Multi-step workflows
 - Directory-aware context detection
 - Alias system with `aliases.yaml`
-- `forge add` / `forge edit` / `forge delete` CLI commands
+- `command-vault add` / `command-vault edit` / `command-vault delete` CLI vault
 
 ### Week 5 — Intelligence & Workspaces
 - Command Intelligence (SQLite-backed usage tracking + suggestions)
-- Workspace profiles (`forge workspace <name>`)
+- Workspace profiles (`command-vault workspace <name>`)
 - Export / import vault
 
 ### Week 6+ — Future
@@ -1318,11 +1318,11 @@ Level 4  →  Developer operating system        (v4.0)
 Most CLI tools optimize for **functionality.**
 Very few optimize for **developer experience, aesthetics, discoverability, and flow state.**
 
-That is where Forge becomes genuinely special.
+That is where Command Vault becomes genuinely special.
 
 ---
 
-*Forge — because your terminal should work for you, not against you.*
+*Command Vault — because your terminal should work for you, not against you.*
 
 > Contributions, forks, and feedback welcome.
 > The best version of this gets built with many minds, not one.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Forge - Developer Command Operating System MVP."""
+"""Command Vault - Developer Command Operating System MVP."""
 
 import sys
 
@@ -12,13 +12,13 @@ try:
 except ModuleNotFoundError as exc:
     missing = exc.name or "dependency"
     print(
-        f"Forge is missing Python package '{missing}'.\n"
+        f"Command Vault is missing Python package '{missing}'.\n"
         "Install dependencies with: pip3 install -r requirements.txt",
         file=sys.stderr,
     )
     sys.exit(1)
 
-from forge_core.cli import main
+from command_vault_core.cli import main
 
 if __name__ == "__main__":
     sys.exit(main())
