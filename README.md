@@ -9,7 +9,7 @@ A beautiful, interactive terminal tool that stores all your development commands
 ## Quick Start
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/forge/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/suhailhusainshaan/terminal-helper/main/install.sh | bash
 ```
 
 Then:
