@@ -76,8 +76,37 @@ install_files() {
 }
 
 install_dependencies() {
-  python3 -m venv "$INSTALL_DIR/.venv"
-  "$INSTALL_DIR/.venv/bin/python" -m pip install --upgrade pip
+  log "Creating Python virtual environment..."
+  local venv_success=0
+
+  if python3 -m venv "$INSTALL_DIR/.venv" 2>/dev/null; then
+    venv_success=1
+  else
+    log "Standard virtual environment creation failed (ensurepip/python3-venv might be missing)."
+    log "Attempting fallback: creating virtual environment without pip..."
+    if python3 -m venv --without-pip "$INSTALL_DIR/.venv" 2>/dev/null; then
+      log "Virtual environment created successfully. Bootstrapping pip manually..."
+      if command -v curl >/dev/null 2>&1; then
+        if curl -sSL https://bootstrap.pypa.io/get-pip.py | "$INSTALL_DIR/.venv/bin/python" >/dev/null 2>&1; then
+          venv_success=1
+        fi
+      elif command -v wget >/dev/null 2>&1; then
+        if wget -qO- https://bootstrap.pypa.io/get-pip.py | "$INSTALL_DIR/.venv/bin/python" >/dev/null 2>&1; then
+          venv_success=1
+        fi
+      fi
+    fi
+  fi
+
+  if [ "$venv_success" -ne 1 ]; then
+    fail "Failed to configure virtual environment. 
+On Debian/Ubuntu-based systems, please install the missing dependency:
+    sudo apt update && sudo apt install python3-venv"
+  fi
+
+  log "Upgrading pip..."
+  "$INSTALL_DIR/.venv/bin/python" -m pip install --upgrade pip >/dev/null 2>&1 || true
+  log "Installing project dependencies..."
   "$INSTALL_DIR/.venv/bin/python" -m pip install -r "$INSTALL_DIR/requirements.txt"
 }
 
