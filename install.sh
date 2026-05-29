@@ -41,7 +41,15 @@ PY
 
 install_files() {
   local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
+  
+  # FIX 1: Safely determine if this script is actually running from a local file directory
+  if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || true)"
+  else
+    script_dir=""
+  fi
+
+  # Only use local files if we are certain we are running a local file copy and forge.py exists next to it
   if [ -n "$script_dir" ] && [ -f "$script_dir/forge.py" ]; then
     if [ "$script_dir" = "$INSTALL_DIR" ]; then
       return
@@ -56,8 +64,10 @@ install_files() {
     return
   fi
 
+  # Otherwise, treat it as a clean remote network installation
   command -v git >/dev/null 2>&1 || fail "git is required to clone Forge"
   if [ -d "$INSTALL_DIR/.git" ]; then
+    # FIX 2: Ensure git pull runs completely independently of whatever directory the user is currently standing in
     git -C "$INSTALL_DIR" pull --ff-only
   else
     rm -rf "$INSTALL_DIR"
@@ -74,7 +84,7 @@ install_dependencies() {
 configure_shell() {
   local shell_name="$1"
   local rc_file
-  if [ "$shell_name" = "zsh" ]; then
+  if [ "$shell_name" = "zsh" ] || [ "$shell_name" = "sh" ]; then
     rc_file="$HOME/.zshrc"
   else
     rc_file="$HOME/.bashrc"
@@ -104,10 +114,21 @@ EOF
 )
 
   if ! grep -F 'forge_cli()' "$rc_file" >/dev/null 2>&1; then
-    sed -i.bak '/alias forge=.*\/forge.py/d' "$rc_file"
-    sed -i.bak '/alias commands=.*\/forge.py/d' "$rc_file"
-    sed -i.bak "/alias f='forge'/d" "$rc_file"
-    sed -i.bak "/alias f='commands'/d" "$rc_file"
+    # FIX 3: Cross-platform sed compatibility (macOS vs Linux)
+    if sed --version >/dev/null 2>&1; then
+      # GNU sed (Linux)
+      sed -i '/alias forge=.*\/forge.py/d' "$rc_file"
+      sed -i '/alias commands=.*\/forge.py/d' "$rc_file"
+      sed -i "/alias f='forge'/d" "$rc_file"
+      sed -i "/alias f='commands'/d" "$rc_file"
+    else
+      # BSD sed (macOS)
+      sed -i '' '/alias forge=.*\/forge.py/d' "$rc_file"
+      sed -i '' '/alias commands=.*\/forge.py/d' "$rc_file"
+      sed -i '' "/alias f='forge'/d" "$rc_file"
+      sed -i '' "/alias f='commands'/d" "$rc_file"
+    fi
+    
     {
       printf '\n# Forge - Developer Command Operating System\n'
       printf "%s\n" "$function_def"
@@ -115,8 +136,10 @@ EOF
     } >> "$rc_file"
   fi
 
+  # FIX 4: Prevent interactive shell environments from leaking custom prompt hooks/errors during setup
   if command -v "$shell_name" >/dev/null 2>&1; then
-    "$shell_name" -lc "source \"$rc_file\"" >/dev/null 2>&1 || true
+    # Run in an isolated directory to avoid local repo hook side-effects
+    (cd "$HOME" && "$shell_name" -c "source \"$rc_file\"" >/dev/null 2>&1 || true)
   fi
   printf '%s\n' "$rc_file"
 }
