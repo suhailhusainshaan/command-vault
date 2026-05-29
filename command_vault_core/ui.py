@@ -13,13 +13,13 @@ from prompt_toolkit.styles import Style
 from rich import box
 from rich.panel import Panel
 from rich.text import Text
-from .models import console, ForgeCommand, GO_BACK
+from .models import console, CommandVaultCommand, GO_BACK
 from .db import load_config, usage_counts, recent_keys, load_commands
 from .system import status_line, run_shell, copy_command, current_git_branch, running_docker_count
 from .search import ranked_commands
 
-def grouped(commands: list[ForgeCommand]) -> dict[str, list[ForgeCommand]]:
-    groups: dict[str, list[ForgeCommand]] = {}
+def grouped(commands: list[CommandVaultCommand]) -> dict[str, list[CommandVaultCommand]]:
+    groups: dict[str, list[CommandVaultCommand]] = {}
     for command in commands:
         groups.setdefault(command.group, []).append(command)
     return groups
@@ -32,13 +32,13 @@ def print_header() -> None:
         subtitle = "Developer Command Operating System"
     console.print(
         Panel(
-            Text(f"FORGE  -  Developer Command Operating System\n{subtitle}", justify="center"),
+            Text(f"COMMAND VAULT  -  Developer Command Operating System\n{subtitle}", justify="center"),
             border_style="cyan",
             box=box.ROUNDED,
         )
     )
 
-def preview(command: ForgeCommand) -> None:
+def preview(command: CommandVaultCommand) -> None:
     tags = ", ".join(command.tags or []) or "none"
     body = (
         f"[bold]{command.label}[/bold]\n"
@@ -136,7 +136,7 @@ def build_style(colors: dict) -> Style:
         "cursor": colors["cursor"],
     })
 
-def command_item_label(command: ForgeCommand, counts: dict[str, int] | None = None, show_badge: bool = True) -> str:
+def command_item_label(command: CommandVaultCommand, counts: dict[str, int] | None = None, show_badge: bool = True) -> str:
     fav = "★  " if command.favorite else ""
     cnt = (counts or {}).get(command.key, 0)
     badge = f" [{cnt}x]" if show_badge and cnt > 0 else ""
@@ -146,7 +146,7 @@ def command_item_label(command: ForgeCommand, counts: dict[str, int] | None = No
         return f"{fav}{cmd_text} | {desc}{badge}"
     return f"{fav}{cmd_text}{badge}"
 
-def format_preview_tokens(command: ForgeCommand, counts: dict[str, int] | None = None) -> list[tuple[str, str]]:
+def format_preview_tokens(command: CommandVaultCommand, counts: dict[str, int] | None = None) -> list[tuple[str, str]]:
     tokens: list[tuple[str, str]] = []
     tokens.append(("class:preview_body", f"  {command.cmd}\n"))
     if command.description:
@@ -163,9 +163,9 @@ def format_preview_tokens(command: ForgeCommand, counts: dict[str, int] | None =
     return tokens
 
 def show_empty_state(title: str) -> None:
-    console.print(Panel(f"[yellow]Nothing here yet.[/yellow]\n\n[dim]Add commands with: commands add[/dim]", title=title, border_style="yellow"))
+    console.print(Panel(f"[yellow]Nothing here yet.[/yellow]\n\n[dim]Add commands with: vault add[/dim]", title=title, border_style="yellow"))
 
-def show_action_overlay(command: ForgeCommand) -> str | None:
+def show_action_overlay(command: CommandVaultCommand) -> str | None:
     preview(command)
     action = select_prompt(
         "Action",
@@ -351,7 +351,7 @@ def build_footer_tokens(box_w: int, lines: int, picker_type: str) -> list[tuple[
         tokens.append(("class:border", "└" + "─" * (box_w - 2) + "┘\n"))
     return tokens
 
-def load_history_commands(limit: int = 50) -> list[ForgeCommand]:
+def load_history_commands(limit: int = 50) -> list[CommandVaultCommand]:
     from .commands_mgmt import shell_history_path, parse_history_line
     history_path = shell_history_path()
     if not history_path or not history_path.exists():
@@ -363,10 +363,10 @@ def load_history_commands(limit: int = 50) -> list[ForgeCommand]:
         for line in reversed(lines):
             command_text = parse_history_line(line)
             if command_text and command_text not in seen:
-                if command_text.startswith("commands") or command_text.startswith("forge") or command_text.startswith("./forge"):
+                if command_text.startswith("vault") or command_text.startswith("cv") or command_text.startswith("command-vault") or command_text.startswith("./command-vault"):
                     continue
                 seen.add(command_text)
-                cmd_obj = ForgeCommand(
+                cmd_obj = CommandVaultCommand(
                     name=command_text,
                     cmd=command_text,
                     group="History",
@@ -381,7 +381,7 @@ def load_history_commands(limit: int = 50) -> list[ForgeCommand]:
         pass
     return history_cmds
 
-def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | str | tuple | None:
+def search_picker(commands: list[CommandVaultCommand], title: str) -> CommandVaultCommand | str | tuple | None:
     query = ""
     selected_index = 0
     start_index = 0
@@ -416,7 +416,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         ]
         return [history_item] + group_list
 
-    def visible_items() -> list[ForgeCommand | tuple[str, str, str]]:
+    def visible_items() -> list[CommandVaultCommand | tuple[str, str, str]]:
         if is_dir_jump_mode(query):
             if current_peek_path:
                 target_dir = current_peek_path
@@ -480,8 +480,8 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         its = visible_items()
         selected_index = max(0, min(selected_index, len(its) - 1)) if its else 0
 
-    def item_label(item: ForgeCommand | tuple[str, str, str]) -> str:
-        if isinstance(item, ForgeCommand):
+    def item_label(item: CommandVaultCommand | tuple[str, str, str]) -> str:
+        if isinstance(item, CommandVaultCommand):
             return command_item_label(item, counts, show_badge=True)
         return item[0]
 
@@ -515,7 +515,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         visible_its = its[start_index : start_index + max_visible]
 
         tokens: list[tuple[str, str]] = [
-            ("class:title", f" FORGE — {title}\n"),
+            ("class:title", f" COMMAND VAULT — {title}\n"),
             ("class:border", "┌" + "─" * (box_w - 2) + "┐\n"),
         ]
 
@@ -561,7 +561,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         else:
             if not its:
                 tokens.append(("class:muted", "\n  No command groups found\n"))
-                tokens.append(("class:help", '  Add commands with: commands add\n'))
+                tokens.append(("class:help", '  Add commands with: vault add\n'))
             else:
                 tokens.append(("", "\n"))
                 for idx, item in enumerate(visible_its):
@@ -636,7 +636,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
             event.app.exit(result="__edit__")
             return
         selected = its[selected_index]
-        if isinstance(selected, ForgeCommand):
+        if isinstance(selected, CommandVaultCommand):
             event.app.exit(result=("__edit_cmd__", selected))
         else:
             event.app.exit(result="__edit__")
@@ -646,7 +646,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         its = visible_items()
         if its:
             selected = its[selected_index]
-            if isinstance(selected, ForgeCommand):
+            if isinstance(selected, CommandVaultCommand):
                 event.app.exit(result=("__delete_cmd__", selected))
 
     @kb.add(Keys.ControlT, eager=True)
@@ -654,7 +654,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         its = visible_items()
         if its:
             selected = its[selected_index]
-            if isinstance(selected, ForgeCommand):
+            if isinstance(selected, CommandVaultCommand):
                 event.app.exit(result=("__toggle_fav__", selected))
 
     @kb.add(Keys.ControlF, eager=True)
@@ -670,7 +670,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
         its = visible_items()
         if its:
             selected = its[selected_index]
-            if isinstance(selected, ForgeCommand):
+            if isinstance(selected, CommandVaultCommand):
                 event.app.exit(result=("__copy_cmd__", selected))
 
     @kb.add(Keys.ControlW, eager=True)
@@ -762,7 +762,7 @@ def search_picker(commands: list[ForgeCommand], title: str) -> ForgeCommand | st
     )
     return app.run()
 
-def command_picker(commands: list[ForgeCommand], title: str) -> int:
+def command_picker(commands: list[CommandVaultCommand], title: str) -> int:
     if not commands:
         show_empty_state(title)
         questionary.press_any_key_to_continue().ask()
@@ -775,7 +775,7 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
     style = build_style(colors)
     counts = usage_counts()
 
-    def filtered() -> list[ForgeCommand]:
+    def filtered() -> list[CommandVaultCommand]:
         if query.strip():
             return ranked_commands(commands, query)[:50]
         return commands
@@ -818,7 +818,7 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
         visible_items = items[start_index : start_index + max_visible]
 
         tokens: list[tuple[str, str]] = [
-            ("class:title", f" FORGE — {title}\n"),
+            ("class:title", f" COMMAND VAULT — {title}\n"),
             ("class:border", "┌" + "─" * (box_w - 2) + "┐\n"),
         ]
 
@@ -994,7 +994,7 @@ def command_picker(commands: list[ForgeCommand], title: str) -> int:
     )
     return app.run()
 
-def group_picker(commands: list[ForgeCommand], title: str = "Select a command group") -> int:
+def group_picker(commands: list[CommandVaultCommand], title: str = "Select a command group") -> int:
     colors = get_theme_colors()
     style = build_style(colors)
     selected_index = 0
@@ -1044,7 +1044,7 @@ def group_picker(commands: list[ForgeCommand], title: str = "Select a command gr
         visible_its = its[start_index : start_index + max_visible]
 
         tokens: list[tuple[str, str]] = [
-            ("class:title", f" FORGE — {title}\n"),
+            ("class:title", f" COMMAND VAULT — {title}\n"),
             ("class:border", "┌" + "─" * (box_w - 2) + "┐\n"),
             ("class:help", " │  Select a group or action\n".center(box_w - 2).rstrip().ljust(box_w - 2) + "│\n"),
             ("class:border", "╞" + "═" * (box_w - 2) + "╡\n"),

@@ -3,7 +3,7 @@ import sqlite3
 import yaml
 from pathlib import Path
 from typing import Any
-from .models import ForgeCommand, CONFIG_PATH, FAVORITES_PATH, DB_PATH, COMMANDS_DIR
+from .models import CommandVaultCommand, CONFIG_PATH, FAVORITES_PATH, DB_PATH, COMMANDS_DIR
 
 _usage_cache: dict[str, int] | None = None
 
@@ -49,7 +49,7 @@ def init_db() -> None:
         )
         db.commit()
 
-def record_usage(command: ForgeCommand) -> None:
+def record_usage(command: CommandVaultCommand) -> None:
     global _usage_cache
     _usage_cache = None
     init_db()
@@ -99,9 +99,9 @@ def recent_keys(limit: int = 20) -> list[str]:
         ).fetchall()
     return [row[0] for row in rows]
 
-def load_commands() -> list[ForgeCommand]:
+def load_commands() -> list[CommandVaultCommand]:
     favorites = load_favorites()
-    commands: list[ForgeCommand] = []
+    commands: list[CommandVaultCommand] = []
     for path in sorted(COMMANDS_DIR.glob("*.yaml")):
         data = load_yaml(path, {})
         group = data.get("group", path.stem.title())
@@ -109,7 +109,7 @@ def load_commands() -> list[ForgeCommand]:
         for item in data.get("commands", []):
             if not item.get("name") or not item.get("cmd"):
                 continue
-            command = ForgeCommand(
+            command = CommandVaultCommand(
                 name=str(item["name"]),
                 cmd=str(item["cmd"]),
                 group=str(item.get("group", group)),

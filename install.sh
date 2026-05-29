@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${FORGE_REPO_URL:-https://github.com/suhailhusainshaan/terminal-helper.git}"
-INSTALL_DIR="${FORGE_HOME:-$HOME/.forge}"
+REPO_URL="${COMMAND_VAULT_REPO_URL:-https://github.com/suhailhusainshaan/terminal-helper.git}"
+INSTALL_DIR="${COMMAND_VAULT_HOME:-$HOME/.command-vault}"
 
 log() {
   printf '\033[1;36m%s\033[0m\n' "$1"
@@ -50,7 +50,7 @@ install_files() {
   fi
 
   # Only use local files if we are certain we are running a local file copy and forge.py exists next to it
-  if [ -n "$script_dir" ] && [ -f "$script_dir/forge.py" ]; then
+  if [ -n "$script_dir" ] && [ -f "$script_dir/command-vault.py" ]; then
     if [ "$script_dir" = "$INSTALL_DIR" ]; then
       return
     fi
@@ -65,7 +65,7 @@ install_files() {
   fi
 
   # Otherwise, treat it as a clean remote network installation
-  command -v git >/dev/null 2>&1 || fail "git is required to clone Forge"
+  command -v git >/dev/null 2>&1 || fail "git is required to clone Command Vault"
   if [ -d "$INSTALL_DIR/.git" ]; then
     # FIX 2: Ensure git pull runs completely independently of whatever directory the user is currently standing in
     git -C "$INSTALL_DIR" pull --ff-only
@@ -93,11 +93,11 @@ configure_shell() {
   touch "$rc_file"
   local function_def
   function_def=$(cat << 'EOF'
-forge_cli() {
-    local cmd_file="$HOME/.forge/.forge_cmd_buffer"
+command_vault_cli() {
+    local cmd_file="$HOME/.command-vault/.command_vault_cmd_buffer"
     rm -f "$cmd_file"
 
-    "$HOME/.forge/.venv/bin/python" "$HOME/.forge/forge.py" "$@"
+    "$HOME/.command-vault/.venv/bin/python" "$HOME/.command-vault/command-vault.py" "$@"
     local exit_code=$?
 
     if [ -f "$cmd_file" ]; then
@@ -109,30 +109,34 @@ forge_cli() {
     fi
     return $exit_code
 }
-alias commands="forge_cli"
+alias vault="command_vault_cli"
+alias cv="vault"
+alias command-vault="vault"
 EOF
 )
 
-  if ! grep -F 'forge_cli()' "$rc_file" >/dev/null 2>&1; then
+  if ! grep -F 'command_vault_cli()' "$rc_file" >/dev/null 2>&1; then
     # FIX 3: Cross-platform sed compatibility (macOS vs Linux)
     if sed --version >/dev/null 2>&1; then
       # GNU sed (Linux)
-      sed -i '/alias forge=.*\/forge.py/d' "$rc_file"
-      sed -i '/alias commands=.*\/forge.py/d' "$rc_file"
-      sed -i "/alias f='forge'/d" "$rc_file"
-      sed -i "/alias f='commands'/d" "$rc_file"
+      sed -i '/alias forge=.*\/forge.py/d' "$rc_file" || true
+      sed -i '/alias commands=.*\/forge.py/d' "$rc_file" || true
+      sed -i '/forge_cli()/,/}/d' "$rc_file" || true
+      sed -i "/alias f='forge'/d" "$rc_file" || true
+      sed -i "/alias f='commands'/d" "$rc_file" || true
     else
       # BSD sed (macOS)
-      sed -i '' '/alias forge=.*\/forge.py/d' "$rc_file"
-      sed -i '' '/alias commands=.*\/forge.py/d' "$rc_file"
-      sed -i '' "/alias f='forge'/d" "$rc_file"
-      sed -i '' "/alias f='commands'/d" "$rc_file"
+      sed -i '' '/alias forge=.*\/forge.py/d' "$rc_file" || true
+      sed -i '' '/alias commands=.*\/forge.py/d' "$rc_file" || true
+      sed -i '' '/forge_cli()/,/}/d' "$rc_file" || true
+      sed -i '' "/alias f='forge'/d" "$rc_file" || true
+      sed -i '' "/alias f='commands'/d" "$rc_file" || true
     fi
     
     {
-      printf '\n# Forge - Developer Command Operating System\n'
+      printf '\n# Command Vault - Developer Command Operating System\n'
       printf "%s\n" "$function_def"
-      printf "alias f='commands'\n"
+      printf "alias f='vault'\n"
     } >> "$rc_file"
   fi
 
@@ -145,23 +149,23 @@ EOF
 }
 
 main() {
-  log "Installing Forge..."
+  log "Installing Command Vault..."
   check_python
   install_files
-  chmod +x "$INSTALL_DIR/forge.py"
+  chmod +x "$INSTALL_DIR/command-vault.py"
   install_dependencies
 
   local shell_name rc_file
   shell_name="$(detect_shell)"
   rc_file="$(configure_shell "$shell_name")"
 
-  "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/forge.py" --setup
-  log "Forge installed in $INSTALL_DIR"
+  "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/command-vault.py" --setup
+  log "Command Vault installed in $INSTALL_DIR"
   log "Shell detected: $shell_name ($rc_file sourced)"
-  log "Run: commands"
+  log "Run: vault"
 
-  log "Configuring Forge keyboard shortcuts..."
-  "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/forge.py" keybind
+  log "Configuring Command Vault keyboard shortcuts..."
+  "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/command-vault.py" keybind
   log "Keyboard shortcuts configured: Ctrl+Shift+C or Ctrl+G"
 }
 

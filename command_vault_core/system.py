@@ -135,11 +135,11 @@ def install_shell_ctrl_g() -> bool:
 
     rc_file = Path.home() / (".zshrc" if shell == "zsh" else ".bashrc")
     if shell == "zsh":
-        keybind_line = r'bindkey -s "^G" "commands\n"'
-        comment = "# Forge: Ctrl+G launches commands"
+        keybind_line = r'bindkey -s "^G" "vault\n"'
+        comment = "# Command Vault: Ctrl+G launches vault"
     else:
-        keybind_line = r'bind "\C-g": "commands\n"'
-        comment = "# Forge: Ctrl+G launches commands"
+        keybind_line = r'bind "\C-g": "vault\n"'
+        comment = "# Command Vault: Ctrl+G launches vault"
 
     content = rc_file.read_text() if rc_file.exists() else ""
     if keybind_line in content:
@@ -147,7 +147,7 @@ def install_shell_ctrl_g() -> bool:
 
     with rc_file.open("a") as f:
         f.write(f"\n{comment}\n{keybind_line}\n")
-    console.print(f"  [green]✓ Added Ctrl+G → commands to {rc_file}[/green]")
+    console.print(f"  [green]✓ Added Ctrl+G → vault to {rc_file}[/green]")
     console.print("  [dim]  Run: source {}[/dim]".format(rc_file.name))
     return True
 
@@ -156,7 +156,7 @@ def print_manual_terminal_app() -> None:
     [dim]1. Open Terminal → Settings → Profiles → [your profile] → Keyboard[/dim]
     [dim]2. Click [+] to add a keybinding:[/dim]
     [dim]   Key: C   Modifiers: ⇧⌃   Action: Send text[/dim]
-    [dim]   Value: commands\\r[/dim]
+    [dim]   Value: vault\\r[/dim]
     [dim]3. Click OK[/dim]""")
 
 def print_manual_iterm2() -> None:
@@ -164,7 +164,7 @@ def print_manual_iterm2() -> None:
     [dim]1. Open iTerm2 → Settings → Keys → Key Bindings[/dim]
     [dim]2. Click [+] to add:[/dim]
     [dim]   Keyboard Shortcut: ^⇧C   Action: Send Text[/dim]
-    [dim]   Value: commands\\n[/dim]
+    [dim]   Value: vault\\n[/dim]
     [dim]3. Click OK[/dim]""")
 
 def print_manual_gnome() -> None:
@@ -173,7 +173,7 @@ def print_manual_gnome() -> None:
     [dim]2. Disable 'Copy' shortcut if bound to Ctrl+Shift+C[/dim]
     [dim]3. Or use OS-level shortcut:[/dim]
     [dim]   Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts[/dim]
-    [dim]   Add shortcut: Name=Forge  Command=gnome-terminal -- commands  Shortcut=^⇧C[/dim]""")
+    [dim]   Add shortcut: Name=Command Vault  Command=gnome-terminal -- vault  Shortcut=^⇧C[/dim]""")
 
 def install_terminal_ctrl_shift_c() -> bool | None:
     terminal = detect_terminal()
@@ -208,11 +208,11 @@ def install_terminal_ctrl_shift_c() -> bool | None:
                             delay 0.1
                             keystroke tab
                             delay 0.1
-                            keystroke "commands"
+                            keystroke "vault"
                             delay 0.1
                             keystroke tab
                             delay 0.1
-                            keystroke "commands\\r"
+                            keystroke "vault\\r"
                             delay 0.1
                             key code 36
                         end try
@@ -224,7 +224,7 @@ def install_terminal_ctrl_shift_c() -> bool | None:
             text=True,
         )
         if result.returncode == 0:
-            console.print("  [green]✓ Ctrl+Shift+C → commands configured in Terminal.app[/green]")
+            console.print("  [green]✓ Ctrl+Shift+C → vault configured in Terminal.app[/green]")
             return True
         print_manual_terminal_app()
         return None
@@ -236,14 +236,14 @@ def install_terminal_ctrl_shift_c() -> bool | None:
 
     if terminal == "GNOME Terminal" and system == "Linux":
         try:
-            gnome_path = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom-forge/"
+            gnome_path = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom-command-vault/"
 
             subprocess.run(["gsettings", "set",
                 f"org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{gnome_path}",
-                "name", "Open Forge"], check=False, capture_output=True)
+                "name", "Open Command Vault"], check=False, capture_output=True)
             subprocess.run(["gsettings", "set",
                 f"org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{gnome_path}",
-                "command", "gnome-terminal -- commands"], check=False, capture_output=True)
+                "command", "gnome-terminal -- vault"], check=False, capture_output=True)
             subprocess.run(["gsettings", "set",
                 f"org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{gnome_path}",
                 "binding", "<Control><Shift>C"], check=False, capture_output=True)
@@ -268,7 +268,7 @@ def install_terminal_ctrl_shift_c() -> bool | None:
                     "org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings",
                     new_list], check=False, capture_output=True)
 
-            console.print("  [green]✓ Ctrl+Shift+C → launch Forge via GNOME shortcut[/green]")
+            console.print("  [green]✓ Ctrl+Shift+C → launch Command Vault via GNOME shortcut[/green]")
             return True
         except FileNotFoundError:
             print_manual_gnome()
@@ -283,12 +283,12 @@ def install_terminal_ctrl_shift_c() -> bool | None:
     return None
 
 def setup_keybind() -> int:
-    console.print(Panel.fit("⚡ Forge Keyboard Shortcut Setup", border_style="cyan"))
+    console.print(Panel.fit("⚡ Command Vault Keyboard Shortcut Setup", border_style="cyan"))
 
     console.print("\n[bold]Step 1: Shell shortcut (Ctrl+G) — works in any terminal[/bold]")
     install_shell_ctrl_g()
 
-    console.print("\n[bold]Step 2: Terminal shortcut (Ctrl+Shift+C) — opens Forge instantly[/bold]")
+    console.print("\n[bold]Step 2: Terminal shortcut (Ctrl+Shift+C) — opens Command Vault instantly[/bold]")
     console.print("  [dim](Note: This may override your terminal's Copy shortcut.)[/dim]")
     install_terminal_ctrl_shift_c()
 

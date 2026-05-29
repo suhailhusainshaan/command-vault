@@ -6,7 +6,7 @@ import questionary
 import time
 from pathlib import Path
 from typing import Any
-from .models import console, ForgeCommand, COMMANDS_DIR
+from .models import console, CommandVaultCommand, COMMANDS_DIR
 from .db import load_yaml, write_yaml
 
 def slugify(value: str) -> str:
@@ -115,7 +115,7 @@ def edit_group(group: str | None) -> int:
         return 130
     return subprocess.call([editor, str(path)])
 
-def delete_command(command: ForgeCommand) -> None:
+def delete_command(command: CommandVaultCommand) -> None:
     if not command.source_file or not command.source_file.exists():
         console.print("[red]Cannot delete: Source file not found.[/red]")
         time.sleep(1.5)

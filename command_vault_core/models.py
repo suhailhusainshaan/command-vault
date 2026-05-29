@@ -16,7 +16,7 @@ GO_BACK = -1000
 console = Console()
 
 @dataclass
-class ForgeCommand:
+class CommandVaultCommand:
     name: str
     cmd: str
     group: str
