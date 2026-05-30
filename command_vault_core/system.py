@@ -135,10 +135,10 @@ def install_shell_ctrl_g() -> bool:
 
     rc_file = Path.home() / (".zshrc" if shell == "zsh" else ".bashrc")
     if shell == "zsh":
-        keybind_line = r'bindkey -s "^G" "vault\n"'
+        keybind_line = r"""bindkey -s '^G' 'vault\n'"""
         comment = "# Command Vault: Ctrl+G launches vault"
     else:
-        keybind_line = r'bind "\C-g": "vault\n"'
+        keybind_line = r"""bind '"\C-g": "vault\n"'"""
         comment = "# Command Vault: Ctrl+G launches vault"
 
     content = rc_file.read_text() if rc_file.exists() else ""
