@@ -139,7 +139,7 @@ def install_shell_ctrl_g() -> bool:
         comment = "# Command Vault: Ctrl+G launches vault"
         legacy_lines: list[str] = []
     else:
-        keybind_line = r"""bind '"\C-g":"vault\n"'"""
+        keybind_line = r"""bind \'"\C-g":"vault\n"\'"""
         comment = "# Command Vault: Ctrl+G launches vault"
         legacy_lines = ['bind "\\C-g": "vault\\n"']
 
