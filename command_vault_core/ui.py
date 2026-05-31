@@ -397,6 +397,19 @@ def search_picker(commands: list[CommandVaultCommand], title: str) -> CommandVau
         ("✕  Quit", "__quit__"),
     ]
 
+    def raw_command_text() -> str:
+        text = query.strip()
+        if text.startswith(">"):
+            return text[1:].strip()
+        return text
+
+    def is_raw_mode() -> bool:
+        return query.strip().startswith(">")
+
+    def raw_item() -> tuple[str, str, str]:
+        raw_cmd = raw_command_text()
+        return (f"⚡ Run raw: '{raw_cmd}'", f"__run_raw__:{raw_cmd}", "raw")
+
     def group_items() -> list[tuple[str, str, str]]:
         grps = grouped(commands)
         history_cmds = load_history_commands(limit=100)
@@ -469,10 +482,13 @@ def search_picker(commands: list[CommandVaultCommand], title: str) -> CommandVau
                 res.append((f"{icon} {i.name}", str(i), "dir" if i.is_dir() else "file"))
             return res
 
+        if is_raw_mode():
+            raw_cmd = raw_command_text()
+            return [raw_item()] if raw_cmd else []
+
         if query.strip():
             command_results = ranked_commands(commands, query)[:max_results]
-            raw_item = (f"⚡ Run raw: '{query}'", f"__run_raw__:{query}", "raw")
-            return [*command_results, raw_item, *nav_items]
+            return [*command_results, raw_item(), *nav_items]
         return [*group_items(), *nav_items]
 
     def clamp_index() -> None:
@@ -538,15 +554,17 @@ def search_picker(commands: list[CommandVaultCommand], title: str) -> CommandVau
 
         is_dir_jump = is_dir_jump_mode(query)
         if is_dir_jump or query.strip():
-            total = len(its) if is_dir_jump else total_matches()
-            shown = len(its) if is_dir_jump else min(total, max_results)
+            total = len(its) if is_dir_jump or is_raw_mode() else total_matches()
+            shown = len(its) if is_dir_jump or is_raw_mode() else min(total, max_results)
             if is_dir_jump and total == 0:
                 tokens.append(("class:muted", f"\n  No files found in directory\n"))
             else:
                 if is_dir_jump:
                     tokens.append(("class:help", f"\n  {shown} items in directory\n"))
+                elif is_raw_mode():
+                    tokens.append(("class:help", "\n  Raw command mode - Enter runs exactly this command\n"))
                 else:
-                    tokens.append(("class:help", f"\n  {total} matching commands\n"))
+                    tokens.append(("class:help", f"\n  {total} matching commands - Ctrl+Enter runs raw text\n"))
                 
                 for idx, item in enumerate(visible_its):
                     if isinstance(item, tuple) and item[1].startswith("__") and item[1] != "__error__" and not item[1].startswith("__run_raw__"):
@@ -556,7 +574,7 @@ def search_picker(commands: list[CommandVaultCommand], title: str) -> CommandVau
                     sty = "class:selected" if actual_idx == selected_index else "class:item"
                     tokens.append((sty, f"  {ptr}{item_label(item)}\n"))
                 
-                if not is_dir_jump and total > max_results:
+                if not is_dir_jump and not is_raw_mode() and total > max_results:
                     tokens.append(("class:muted", f"  ... and {total - max_results} more\n"))
         else:
             if not its:
@@ -680,6 +698,12 @@ def search_picker(commands: list[CommandVaultCommand], title: str) -> CommandVau
     @kb.add(Keys.ControlP, eager=True)
     def _profile_shortcut(event):
         event.app.exit(result=("__profile__", None))
+
+    @kb.add(Keys.ControlJ, eager=True)
+    def _run_raw_shortcut(event):
+        raw_cmd = raw_command_text()
+        if raw_cmd and not is_dir_jump_mode(query):
+            event.app.exit(result=f"__run_raw__:{raw_cmd}")
 
     @kb.add(Keys.ControlM, eager=True)
     def _enter(event):

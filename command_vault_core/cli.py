@@ -422,6 +422,25 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["--"]:
+        raw_start = 1
+        raw_cmd = " ".join(argv[raw_start:]).strip()
+        setup(verbose=False)
+        if not raw_cmd:
+            console.print("[red]No command provided after --.[/red]")
+            return 1
+        return execute_command(
+            CommandVaultCommand(
+                name=raw_cmd,
+                cmd=raw_cmd,
+                group="Ad hoc",
+                icon="⚡",
+                description="Ad-hoc raw command execution",
+                tags=["raw"],
+            )
+        )
+
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.version:
